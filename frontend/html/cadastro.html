@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Produtos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+    <!-- Container do cabeçalho (Carregado via JavaScript) -->
+    <div id="header-container"></div>
+
+    <!-- Conteúdo principal -->
+    <div class="container mt-3">
+        <h2>Cadastro de Produtos</h2>
+        <form id="formCadastro">
+            <div class="mb-3">
+                <label for="nomeProduto" class="form-label">Nome do Produto</label>
+                <input type="text" class="form-control" id="nomeProduto" required>
+            </div>
+            <div class="mb-3">
+                <label for="grupoProduto" class="form-label">Grupo do Produto</label>
+                <select class="form-select" id="grupoProduto" required>
+                    <option value="">Selecione um grupo</option>
+                    <option value="350ml">350 ml</option>
+                    <option value="300ml">300 ml</option>
+                    <option value="p3">p3</option>
+                    <option value="p2">p2</option>
+                    <option value="p600">p600/450</option>
+                    <option value="refrilata">Refri Lata</option>
+                    <option value="refrvdr">Refri vidro</option>
+                    <option value="big">Big Power</option>
+                    <option value="473ml">473 ml</option>
+                    <option value="269ml">269 ml</option>
+                    <option value="600ml">600 ml cerv.</option>
+                    <option value="litrao">Litrão</option>
+                    <option value="330ml">Long neck</option>
+                    <option value="ice">Ice</option>
+                    <option value="barkov">Barkov</option>
+                    <option value="contini">Contini</option>
+                    <option value="vibe">Vibe</option>
+                    <option value="sakai">Sakai</option>
+                    <option value="old_red">Old Red</option>
+                    <option value="900ml">900 ml</option>
+                    <option value="1_litro">1 Litro</option>
+                    <option value="750_ml">750 ml</option>
+                    <option value="xopito">Xopito</option>
+                    <option value="bonquitos">Bonquitos</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Adicionar Produto</button>
+        </form>
+
+        <table id="tabelaProdutos" class="table mt-3">
+            <thead>
+                <tr>
+                    <th>Nome do Produto</th>
+                    <th>Grupo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Produtos serão adicionados aqui dinamicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Container do rodapé (Carregado via JavaScript) -->
+    <div id="footer-container"></div>
+
+    <!-- Scripts do Firebase -->
+    <!-- Scripts do Firebase (versão compatível com navegadores) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+
+
+    <!-- Scripts do Bootstrap e do seu aplicativo -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/cadastro.js"></script>
+</body>
+</html>
