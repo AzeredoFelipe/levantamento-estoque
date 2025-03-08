@@ -1,23 +1,9 @@
-// Cache dos arquivos essenciais (Service Worker)
+// Nome do cache
 const cacheName = 'app-cache-v1';
-const filesToCache = [
-  '/',
-  '/levantamento.html',
-  '/index.css',
-  '/acompanhamento.html',
-  '/acompanhamento.js',
-  '/levantamento.js',
-  '/icon-192x192.png',
-  '/icon-512x512.png'
-];
 
 // Instalação do Service Worker
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(cacheName).then((cache) => {
-      return cache.addAll(filesToCache);
-    })
-  );
+  console.log('Service Worker instalado');
 });
 
 // Busca do cache ou da rede

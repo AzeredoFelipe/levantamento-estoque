@@ -23,9 +23,14 @@ app.get('/acompanhamento', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/html/acompanhamento.html'));
 });
 
-// Rota para a página de cadastro
+// Rota para a página de cadastro de produtos
 app.get('/cadastro', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/html/cadastro.html'));
+});
+
+// Rota para a página de cadastro de clientes
+app.get('/cadastroCliente', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/html/cadastroCliente.html'));
 });
 
 // Rota inicial (página de login)

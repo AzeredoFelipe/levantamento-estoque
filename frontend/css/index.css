@@ -1,3 +1,86 @@
+
+/* Estilos específicos para a página inicial */
+body.index-page {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #156FF5, #0C4AA6); /* Gradiente azul */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #fff;
+}
+
+body.index-page .welcome-container {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1); /* Fundo semi-transparente */
+    padding: 40px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px); /* Efeito de desfoque */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); /* Sombra suave */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Borda sutil */
+    max-width: 600px;
+    width: 90%;
+}
+
+body.index-page .welcome-container h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    font-weight: bold;
+    color: #fff;
+}
+
+body.index-page .welcome-container p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    color: #e0e0e0;
+}
+
+body.index-page .btn-entrar {
+    display: inline-block;
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #156FF5;
+    background-color: #fff;
+    border: none;
+    border-radius: 50px; /* Bordas arredondadas */
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+body.index-page .btn-entrar:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-3px); /* Efeito de levantar ao passar o mouse */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+body.index-page .btn-entrar:active {
+    transform: translateY(0); /* Efeito de pressionar */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsividade para telas menores */
+@media (max-width: 768px) {
+    body.index-page .welcome-container {
+        padding: 20px;
+    }
+
+    body.index-page .welcome-container h1 {
+        font-size: 2rem;
+    }
+
+    body.index-page .welcome-container p {
+        font-size: 1rem;
+    }
+
+    body.index-page .btn-entrar {
+        padding: 10px 20px;
+        font-size: 1rem;
+    }
+}
 /* Fixando a navbar */
 .navbar {
     position: sticky;
@@ -11,12 +94,9 @@
 .navbar-nav .nav-link {
     font-size: 18px; /* Aumenta o tamanho da fonte */
     font-weight: bold; /* Deixa a letra mais grossa */
-    color: #ffffff; /* Deixa o texto branco para contraste */
+    color: #ffffff !important; /* Deixa o texto branco para contraste */
     text-transform: uppercase; /* Deixa as letras todas maiúsculas (opcional) */
-    color: #ffffff !important;
-  }
-
-
+}
 
 /* Fixando o cabeçalho "Levantamento de Estoque" e botões */
 .sticky-header {
@@ -24,7 +104,7 @@
     top: 0px; /* Altura da navbar */
     z-index: 1020;
     background-color: white;
-    padding: 10px ;
+    padding: 10px;
 }
 
 .sharebButton {
@@ -40,15 +120,6 @@
     top: 110px; /* Altura da navbar + altura do cabeçalho e botões */
     z-index: 1020;
     background-color: white;
-    z-index: 1010;
-}
-
-
-/* Cor de fundo mais escura e contorno mais forte no cabeçalho */
-.custom-table-header th {
-    background-color: #d3d3d3; /* Cinza escuro */
-    border: 2px solid #888;    /* Contorno mais forte */
-    color: #000;               /* Cor do texto */
 }
 
 /* Cor de fundo mais escura e contorno mais forte no cabeçalho */
@@ -94,7 +165,7 @@
 /* Container geral */
 .mix-medio-container {
     max-width: 800px; /* Maior largura para acomodar duas colunas */
-   padding: 20px;
+    padding: 20px;
     border: 1px solid #ddd;
     border-radius: 10px;
     background-color: #f9f9f9;
@@ -140,7 +211,6 @@
     border: 1px solid #ccc;
     border-radius: 5px;
     background-color: #fff;
-    box-shadow: inset 0px 1px 3px rgba;
 }
 
 /* Botões de opção */
@@ -190,27 +260,6 @@
     font-weight: bold;
 }
 
-/* Estilo para os grupos do formulário */
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-group label {
-    display: block;
-    font-size: 16px;
-    color: #555;
-    margin-bottom: 5px;
-}
-
-.form-control {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #fff;
-}
-
 /* Estilo do botão de cadastro */
 .btn-primary {
     width: 100%;
@@ -240,3 +289,4 @@
         font-size: 16px;
     }
 }
+

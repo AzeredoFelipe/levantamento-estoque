@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de Produtos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/index.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="manifest" href="/js/manifest.json">
 </head>
 <body>
     <!-- Container do cabeçalho (Carregado via JavaScript) -->
@@ -21,35 +23,25 @@
             </div>
             <div class="mb-3">
                 <label for="grupoProduto" class="form-label">Grupo do Produto</label>
-                <select class="form-select" id="grupoProduto" required>
-                    <option value="">Selecione um grupo</option>
-                    <option value="350ml">350 ml</option>
-                    <option value="300ml">300 ml</option>
-                    <option value="p3">p3</option>
-                    <option value="p2">p2</option>
-                    <option value="p600">p600/450</option>
-                    <option value="refrilata">Refri Lata</option>
-                    <option value="refrvdr">Refri vidro</option>
-                    <option value="big">Big Power</option>
-                    <option value="473ml">473 ml</option>
-                    <option value="269ml">269 ml</option>
-                    <option value="600ml">600 ml cerv.</option>
-                    <option value="litrao">Litrão</option>
-                    <option value="330ml">Long neck</option>
-                    <option value="ice">Ice</option>
-                    <option value="barkov">Barkov</option>
-                    <option value="contini">Contini</option>
-                    <option value="vibe">Vibe</option>
-                    <option value="sakai">Sakai</option>
-                    <option value="old_red">Old Red</option>
-                    <option value="900ml">900 ml</option>
-                    <option value="1_litro">1 Litro</option>
-                    <option value="750_ml">750 ml</option>
-                    <option value="xopito">Xopito</option>
-                    <option value="bonquitos">Bonquitos</option>
-                </select>
+                <div class="input-group">
+                    <select class="form-select" id="grupoProduto" required>
+                        <option value="">Selecione um grupo</option>
+                    </select>
+                    <button class="btn btn-outline-secondary" type="button" id="btnAdicionarGrupo">
+                        <i class="bi bi-plus"></i> <!-- Ícone de "+" do Bootstrap Icons -->
+                    </button>
+                </div>
+            </div>
+            <!-- Campo para adicionar novo grupo (inicialmente oculto) -->
+            <div class="mb-3" id="campoNovoGrupo" style="display: none;">
+                <label for="novoGrupo" class="form-label">Novo Grupo</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="novoGrupo" placeholder="Digite o nome do grupo">
+                    <button class="btn btn-success" type="button" id="btnSalvarGrupo">Salvar</button>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary">Adicionar Produto</button>
+            <button type="button" class="btn btn-secondary" id="btnCancelarEdicao" style="display: none;">Cancelar Edição</button>
         </form>
 
         <table id="tabelaProdutos" class="table mt-3">
@@ -57,6 +49,7 @@
                 <tr>
                     <th>Nome do Produto</th>
                     <th>Grupo</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -69,14 +62,12 @@
     <div id="footer-container"></div>
 
     <!-- Scripts do Firebase -->
-    <!-- Scripts do Firebase (versão compatível com navegadores) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script> 
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
-
-
-    <!-- Scripts do Bootstrap e do seu aplicativo -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="../js/cadastro.js"></script>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="/js/cadastro.js"></script>
 </body>
 </html>
