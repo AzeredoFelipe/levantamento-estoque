@@ -1,39 +1,32 @@
 // Importa as instâncias do Firebase
 import { auth } from './firebaseConfig.js';
 
-// Função para fazer login
-document.getElementById('login-form').addEventListener('submit', function(event) {
-    event.preventDefault();
+// Função para realizar o login
+function fazerLogin(event) {
+    event.preventDefault(); // Evita o recarregamento da página
 
     const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
+    const senha = document.getElementById('senha').value;
 
-    // Autenticação com Firebase
-    auth.signInWithEmailAndPassword(email, password)
+    auth.signInWithEmailAndPassword(email, senha)
         .then((userCredential) => {
-            // Login bem-sucedido
-            const user = userCredential.user;
-            console.log('Usuário logado:', user);
+            const userId = userCredential.user.uid;
+            document.getElementById('mensagem').textContent = "Login realizado com sucesso!";
+            console.log("Usuário logado com ID:", userId);
 
-            // Redireciona para a página principal
-            window.location.href = '/html/acompanhamento.html';
+            // Redireciona para a página de levantamento após o login
+            window.location.href = "/html/levantamento.html";
         })
         .catch((error) => {
-            // Trata erros de login
-            const errorCode = error.code;
-            const errorMessage = error.message;
-            console.error('Erro no login:', errorMessage);
-            alert('Erro no login: ' + errorMessage);
+            document.getElementById('mensagem').textContent = "Erro no login: " + error.message;
+            console.error("Erro no login:", error);
         });
-});
+}
 
-// Verifica o estado de autenticação ao carregar a página
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        // Usuário já está logado, redireciona para a página principal
-        window.location.href = '/html/acompanhamento.html';
-    } else {
-        // Usuário não está logado, mantém na página de login
-        console.log('Usuário não autenticado');
+// Adiciona um evento de submit ao formulário de login
+document.addEventListener('DOMContentLoaded', function () {
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', fazerLogin);
     }
 });

@@ -42,3 +42,8 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
 });
+
+// Rota para a página de cadastro de vendedor
+app.get('/cadastroVendedor', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/html/cadastroVendedor.html'));
+});

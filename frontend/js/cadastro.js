@@ -44,9 +44,11 @@ async function adicionarGrupo() {
         return;
     }
 
+    const userId = auth.currentUser.uid; // ID do vendedor logado
+    const gruposRef = db.collection('vendedores').doc(userId).collection('grupos');
+
     try {
         // Verifica se o grupo já existe
-        const gruposRef = db.collection('grupos');
         const querySnapshot = await gruposRef.where('nome', '==', novoGrupo).get();
 
         if (!querySnapshot.empty) {
@@ -68,11 +70,13 @@ async function adicionarGrupo() {
 
 // Função para carregar os grupos no select
 async function carregarGrupos() {
+    const userId = auth.currentUser.uid; // ID do vendedor logado
     const grupoSelect = document.getElementById('grupoProduto');
     grupoSelect.innerHTML = '<option value="">Selecione um grupo</option>'; // Limpa as opções
 
     try {
-        const querySnapshot = await db.collection('grupos').get();
+        const gruposRef = db.collection('vendedores').doc(userId).collection('grupos');
+        const querySnapshot = await gruposRef.get();
         querySnapshot.forEach((doc) => {
             const grupo = doc.data().nome;
             const option = document.createElement('option');
@@ -97,16 +101,18 @@ async function adicionarProduto(event) {
         return;
     }
 
+    const userId = auth.currentUser.uid; // ID do vendedor logado
+    const produtosRef = db.collection('vendedores').doc(userId).collection('produtos');
+
     try {
         // Adiciona os dados ao Firestore
-        const docRef = await db.collection('produtos').add({
+        await produtosRef.add({
             nome: nomeProduto,
             grupo: grupoProduto
         });
-        console.log('Produto cadastrado com ID: ', docRef.id);
         alert('Produto cadastrado com sucesso!');
         document.getElementById('formCadastro').reset();
-        carregarProdutos();
+        carregarProdutos(); // Atualiza a lista de produtos
     } catch (error) {
         console.error('Erro ao salvar produto: ', error);
         alert('Erro ao cadastrar produto. Tente novamente.');
@@ -115,11 +121,13 @@ async function adicionarProduto(event) {
 
 // Função para carregar e exibir os produtos na tabela
 async function carregarProdutos() {
+    const userId = auth.currentUser.uid; // ID do vendedor logado
     const tabelaBody = document.querySelector('#tabelaProdutos tbody');
     tabelaBody.innerHTML = '';
 
     try {
-        const querySnapshot = await db.collection('produtos').get();
+        const produtosRef = db.collection('vendedores').doc(userId).collection('produtos');
+        const querySnapshot = await produtosRef.get();
         querySnapshot.forEach((doc) => {
             const produto = doc.data();
             const row = `
@@ -163,6 +171,9 @@ function adicionarEventos() {
 
 // Função para editar um produto
 function editarProduto(id, nome, grupo) {
+    const userId = auth.currentUser.uid; // ID do vendedor logado
+    const produtosRef = db.collection('vendedores').doc(userId).collection('produtos');
+
     // Oculta o campo de novo grupo e o ícone de "+"
     document.getElementById('campoNovoGrupo').style.display = 'none';
     toggleIconeAdicionarGrupo(false); // Oculta o ícone de "+"
@@ -194,7 +205,7 @@ function editarProduto(id, nome, grupo) {
 
         try {
             // Atualiza o produto no Firestore
-            await db.collection('produtos').doc(id).update({
+            await produtosRef.doc(id).update({
                 nome: nomeProduto,
                 grupo: grupoProduto
             });
@@ -252,10 +263,12 @@ function cancelarEdicao() {
 
 // Função para excluir um produto
 async function excluirProduto(id) {
+    const userId = auth.currentUser.uid; // ID do vendedor logado
+    const produtosRef = db.collection('vendedores').doc(userId).collection('produtos');
+
     if (confirm('Tem certeza que deseja excluir este produto?')) {
         try {
-            // Exclui o produto do Firestore
-            await db.collection('produtos').doc(id).delete();
+            await produtosRef.doc(id).delete();
             alert('Produto excluído com sucesso!');
             carregarProdutos(); // Atualiza a tabela
         } catch (error) {
