@@ -1,24 +1,66 @@
-// Importa as instâncias do Firebase
-import { auth, db } from './firebaseConfig.js';
+// Configuração do Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
+    authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
+    projectId: "levantamentoestoqueweb-d71cb",
+    storageBucket: "levantamentoestoqueweb-d71cb.firebasestorage.app",
+    messagingSenderId: "743543905338",
+    appId: "1:743543905338:web:189cabbd4d9297effea903",
+    measurementId: "G-3ETPR2T1PM"
+};
+
+// Inicializa o Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Listener para verificar o estado de autenticação
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        // Usuário está autenticado, pode acessar user.uid
+        const uid = user.uid;
+        console.log("Usuário autenticado, UID:", uid);
+
+        // Chame as funções que dependem do UID aqui
+        carregarGrupos(uid);
+        carregarProdutos(uid);
+
+        // Configura os eventos após o carregamento da página
+        configurarEventos();
+    } else {
+        // Usuário não está autenticado
+        console.log("Usuário não autenticado");
+        // Redirecione para a página de login ou mostre uma mensagem de erro
+        window.location.href = "/"; // Redireciona para a página inicial
+    }
+});
 
 // Função para carregar o cabeçalho
-function carregarHeader() {
-    fetch('../html/header.html')
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('header-container').innerHTML = data;
-        })
-        .catch(error => console.error('Erro ao carregar o cabeçalho:', error));
+async function carregarHeader() {
+    const headerContainer = document.getElementById('header-container');
+    if (headerContainer) {
+        try {
+            const response = await fetch('/html/header.html'); // Busca o arquivo header.html
+            const html = await response.text();
+            headerContainer.innerHTML = html;
+        } catch (error) {
+            console.error("Erro ao carregar o cabeçalho:", error);
+        }
+    }
 }
 
 // Função para carregar o rodapé
-function carregarFooter() {
-    fetch('../html/footer.html')
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('footer-container').innerHTML = data;
-        })
-        .catch(error => console.error('Erro ao carregar o rodapé:', error));
+async function carregarFooter() {
+    const footerContainer = document.getElementById('footer-container');
+    if (footerContainer) {
+        try {
+            const response = await fetch('/html/footer.html'); // Busca o arquivo footer.html
+            const html = await response.text();
+            footerContainer.innerHTML = html;
+        } catch (error) {
+            console.error("Erro ao carregar o rodapé:", error);
+        }
+    }
 }
 
 // Função para exibir/ocultar o campo de novo grupo
@@ -60,7 +102,7 @@ async function adicionarGrupo() {
         await gruposRef.add({ nome: novoGrupo });
         alert('Grupo adicionado com sucesso!');
         document.getElementById('novoGrupo').value = ''; // Limpa o campo
-        carregarGrupos(); // Atualiza a lista de grupos no select
+        carregarGrupos(userId); // Atualiza a lista de grupos no select
         toggleCampoNovoGrupo(); // Oculta o campo de novo grupo após salvar
     } catch (error) {
         console.error('Erro ao adicionar grupo: ', error);
@@ -69,8 +111,7 @@ async function adicionarGrupo() {
 }
 
 // Função para carregar os grupos no select
-async function carregarGrupos() {
-    const userId = auth.currentUser.uid; // ID do vendedor logado
+async function carregarGrupos(userId) {
     const grupoSelect = document.getElementById('grupoProduto');
     grupoSelect.innerHTML = '<option value="">Selecione um grupo</option>'; // Limpa as opções
 
@@ -112,7 +153,7 @@ async function adicionarProduto(event) {
         });
         alert('Produto cadastrado com sucesso!');
         document.getElementById('formCadastro').reset();
-        carregarProdutos(); // Atualiza a lista de produtos
+        carregarProdutos(userId); // Atualiza a lista de produtos
     } catch (error) {
         console.error('Erro ao salvar produto: ', error);
         alert('Erro ao cadastrar produto. Tente novamente.');
@@ -120,8 +161,7 @@ async function adicionarProduto(event) {
 }
 
 // Função para carregar e exibir os produtos na tabela
-async function carregarProdutos() {
-    const userId = auth.currentUser.uid; // ID do vendedor logado
+async function carregarProdutos(userId) {
     const tabelaBody = document.querySelector('#tabelaProdutos tbody');
     tabelaBody.innerHTML = '';
 
@@ -228,7 +268,7 @@ function editarProduto(id, nome, grupo) {
             }
 
             // Atualiza a tabela
-            carregarProdutos();
+            carregarProdutos(userId);
         } catch (error) {
             console.error('Erro ao atualizar produto: ', error);
             alert('Erro ao atualizar produto. Tente novamente.');
@@ -270,7 +310,7 @@ async function excluirProduto(id) {
         try {
             await produtosRef.doc(id).delete();
             alert('Produto excluído com sucesso!');
-            carregarProdutos(); // Atualiza a tabela
+            carregarProdutos(userId); // Atualiza a tabela
         } catch (error) {
             console.error('Erro ao excluir produto: ', error);
             alert('Erro ao excluir produto. Tente novamente.');
@@ -278,12 +318,8 @@ async function excluirProduto(id) {
     }
 }
 
-// Carregar o cabeçalho e o rodapé quando a página for carregada
-document.addEventListener('DOMContentLoaded', function () {
-    carregarHeader();
-    carregarFooter();
-    carregarGrupos(); // Carrega os grupos ao abrir a página
-
+// Função para configurar os eventos após o carregamento da página
+function configurarEventos() {
     // Adiciona um evento de submit ao formulário
     const formCadastro = document.getElementById('formCadastro');
     formCadastro.addEventListener('submit', adicionarProduto);
@@ -305,7 +341,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnCancelarEdicao) {
         btnCancelarEdicao.addEventListener('click', cancelarEdicao);
     }
+}
 
-    // Carrega os produtos ao carregar a página
-    carregarProdutos();
+// Carregar o cabeçalho e o rodapé quando a página for carregada
+document.addEventListener('DOMContentLoaded', function () {
+    carregarHeader();
+    carregarFooter();
 });

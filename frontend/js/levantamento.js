@@ -1,5 +1,18 @@
-// Importa as instâncias do Firebase
-import { auth, db } from './firebaseConfig.js';
+// Configuração do Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
+    authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
+    projectId: "levantamentoestoqueweb-d71cb",
+    storageBucket: "levantamentoestoqueweb-d71cb.firebasestorage.app",
+    messagingSenderId: "743543905338",
+    appId: "1:743543905338:web:189cabbd4d9297effea903",
+    measurementId: "G-3ETPR2T1PM"
+};
+
+// Inicializa o Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 // Verifica se o Firebase foi carregado corretamente
 console.log('Firebase config carregado:', db, auth);
@@ -34,11 +47,17 @@ function carregarFooter() {
         .catch(error => console.error('Erro ao carregar o rodapé:', error));
 }
 
-
 // Função para carregar clientes do Firestore
 async function carregarClientes() {
+    const userId = localStorage.getItem('userId'); // Recupera o UID do localStorage
+    if (!userId) {
+        console.error('Usuário não autenticado.');
+        window.location.href = "/index.html"; // Redireciona para a página de login
+        return;
+    }
+
     try {
-        const querySnapshot = await db.collection('clientes').get();
+        const querySnapshot = await db.collection('vendedores').doc(userId).collection('clientes').get();
         clienteSelect.innerHTML = '<option value="">Selecione um cliente</option>'; // Limpa as opções
 
         querySnapshot.forEach((doc) => {
@@ -55,8 +74,15 @@ async function carregarClientes() {
 
 // Função para carregar grupos do Firestore
 async function carregarGrupos() {
+    const userId = localStorage.getItem('userId'); // Recupera o UID do localStorage
+    if (!userId) {
+        console.error('Usuário não autenticado.');
+        window.location.href = "/index.html"; // Redireciona para a página de login
+        return;
+    }
+
     try {
-        const querySnapshot = await db.collection('grupos').get();
+        const querySnapshot = await db.collection('vendedores').doc(userId).collection('grupos').get();
         grupoProdutoSelect.innerHTML = '<option value="">Todos Produtos</option>'; // Limpa as opções
 
         querySnapshot.forEach((doc) => {
@@ -73,8 +99,15 @@ async function carregarGrupos() {
 
 // Função para carregar produtos do Firestore
 async function carregarProdutos() {
+    const userId = localStorage.getItem('userId'); // Recupera o UID do localStorage
+    if (!userId) {
+        console.error('Usuário não autenticado.');
+        window.location.href = "/index.html"; // Redireciona para a página de login
+        return;
+    }
+
     try {
-        const querySnapshot = await db.collection('produtos').get();
+        const querySnapshot = await db.collection('vendedores').doc(userId).collection('produtos').get();
         tabelaProdutos.innerHTML = ''; // Limpa a tabela
 
         querySnapshot.forEach((doc) => {

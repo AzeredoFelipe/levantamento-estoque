@@ -99,6 +99,15 @@
                 .catch((error) => console.error('Falha ao registrar o Service Worker:', error));
         }
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const userId = localStorage.getItem('userId');
+            if (!userId) {
+                // Se não houver UID no localStorage, redireciona para a página de login
+                window.location.href = "/index.html";
+            }
+        });
+    </script>
     
     <!-- Scripts do Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -107,6 +116,6 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="/js/levantamento.js"></script>
+    <script src="/js/levantamento.js"></script>
 </body>
 </html>

@@ -290,3 +290,10 @@ body.index-page .btn-entrar:active {
     }
 }
 
+.sucesso {
+    color: green;
+}
+
+.erro {
+    color: red;
+}

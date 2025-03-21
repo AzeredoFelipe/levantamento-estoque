@@ -1,4 +1,8 @@
 // firebaseConfig.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js";
+
 const firebaseConfig = {
     apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
     authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
@@ -10,12 +14,9 @@ const firebaseConfig = {
 };
 
 // Inicializa o Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-// Exporta as instâncias do Firebase que serão usadas no projeto
-const auth = firebase.auth();
-const db = firebase.firestore();
-
+// Exporta as instâncias do Firebase
 export { auth, db };

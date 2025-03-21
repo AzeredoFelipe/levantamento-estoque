@@ -1,5 +1,18 @@
-// Importa as instâncias do Firebase
-import { auth } from './firebaseConfig.js';
+// Configuração do Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
+    authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
+    projectId: "levantamentoestoqueweb-d71cb",
+    storageBucket: "levantamentoestoqueweb-d71cb.firebasestorage.app",
+    messagingSenderId: "743543905338",
+    appId: "1:743543905338:web:189cabbd4d9297effea903",
+    measurementId: "G-3ETPR2T1PM"
+};
+
+// Inicializa o Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 // Função para carregar o cabeçalho
 function carregarHeader() {
@@ -31,8 +44,22 @@ function cadastrarVendedor(event) {
     auth.createUserWithEmailAndPassword(email, senha)
         .then((userCredential) => {
             const userId = userCredential.user.uid;
-            document.getElementById('mensagem').textContent = "Cadastro realizado com sucesso!";
-            console.log("Usuário cadastrado com ID:", userId);
+
+            // Cria um documento na coleção `vendedores` com o UID como ID
+            db.collection('vendedores').doc(userId).set({
+                email: email,
+                clientes: [], // Array de clientes (pode ser preenchido posteriormente)
+                produtos: []  // Array de produtos (pode ser preenchido posteriormente)
+            })
+            .then(() => {
+                document.getElementById('mensagem').textContent = "Cadastro realizado com sucesso!";
+                console.log("Usuário cadastrado com ID:", userId);
+                window.location.href = "/"; // Redireciona para a página de login
+            })
+            .catch((error) => {
+                document.getElementById('mensagem').textContent = "Erro ao criar documento: " + error.message;
+                console.error("Erro ao criar documento:", error);
+            });
         })
         .catch((error) => {
             document.getElementById('mensagem').textContent = "Erro no cadastro: " + error.message;
