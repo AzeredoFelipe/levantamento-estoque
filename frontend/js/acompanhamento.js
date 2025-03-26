@@ -1,62 +1,37 @@
-// Configuração do Firebase (adicionada no início do arquivo)
+// Configuração do Firebase
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "SEU_SENDER_ID",
-  appId: "SEU_APP_ID"
+  apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
+  authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
+  projectId: "levantamentoestoqueweb-d71cb",
+  storageBucket: "levantamentoestoqueweb-d71cb.firebasestorage.app",
+  messagingSenderId: "743543905338",
+  appId: "1:743543905338:web:189cabbd4d9297effea903",
+  measurementId: "G-3ETPR2T1PM"
 };
 
-// Inicialização do Firebase
-if (!firebase.apps.length) {
+// Inicialização segura do Firebase
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
+const auth = firebase.auth();
 
-// Verificação de autenticação melhorada
-firebase.auth().onAuthStateChanged((user) => {
-  if (!user) {
-      window.location.href = "/index.html";
-      return;
+// Sistema de feedback melhorado
+function mostrarFeedback(mensagem, tipo = "sucesso") {
+  const feedbackElement = document.getElementById('feedback-mensagem') || document.getElementById('mensagem');
+  if (feedbackElement) {
+      feedbackElement.textContent = mensagem;
+      feedbackElement.className = `alert alert-${tipo === 'sucesso' ? 'success' : 'danger'}`;
+      feedbackElement.style.display = 'block';
+      
+      setTimeout(() => {
+          feedbackElement.style.display = 'none';
+      }, 5000);
   }
   
-  // Carrega os componentes e cálculos após autenticação
-  carregarComponentes();
-  inicializarCalculos();
-});
-
-// Função para carregar componentes
-function carregarComponentes() {
-  carregarHeader();
-  carregarFooter();
+  tipo === 'erro' ? console.error(mensagem) : console.log(mensagem);
 }
 
-// Função para carregar o cabeçalho (com tratamento de erro melhorado)
-async function carregarHeader() {
-  try {
-      const response = await fetch('../html/header.html');
-      if (!response.ok) throw new Error('Falha ao carregar cabeçalho');
-      const data = await response.text();
-      document.getElementById('header-container').innerHTML = data;
-  } catch (error) {
-      console.error('Erro ao carregar cabeçalho:', error);
-      // Pode adicionar um fallback UI aqui
-  }
-}
-
-// Função para carregar o rodapé (com tratamento de erro melhorado)
-async function carregarFooter() {
-  try {
-      const response = await fetch('../html/footer.html');
-      if (!response.ok) throw new Error('Falha ao carregar rodapé');
-      const data = await response.text();
-      document.getElementById('footer-container').innerHTML = data;
-  } catch (error) {
-      console.error('Erro ao carregar rodapé:', error);
-  }
-}
-
-// Lista de feriados (agora como constante fora do escopo global)
+// Lista de feriados
 const FERIADOS = new Set([
   "2024-12-25", "2024-12-31", "2025-01-01",
   "2025-04-21", "2025-05-01", "2025-09-07",
@@ -64,12 +39,86 @@ const FERIADOS = new Set([
   "2025-12-25", "2025-07-09", "2025-11-20"
 ]);
 
-// Função para verificar feriados (mais eficiente)
+// Elementos da interface
+const elements = {
+  diasUteis: document.getElementById("diasUteis"),
+  diasTrabalhados: document.getElementById("diasTrabalhados"),
+  diasFaltantes: document.getElementById("diasFaltantes"),
+  mixMedio: document.getElementById("mixMedio"),
+  mixFaltante: document.getElementById("mixFaltante"),
+  mix25: document.getElementById("mix25"),
+  mix30: document.getElementById("mix30")
+};
+
+// Inicialização da aplicação
+document.addEventListener('DOMContentLoaded', () => {
+  // Verifica se o Firebase está carregado
+  if (typeof firebase === 'undefined') {
+      mostrarFeedback("Erro: Biblioteca Firebase não carregada", "erro");
+      return;
+  }
+  
+  // Verifica autenticação
+  auth.onAuthStateChanged((user) => {
+      if (user) {
+          carregarComponentes();
+          inicializarCalculos();
+      } else {
+          window.location.href = "/index.html";
+      }
+  });
+});
+
+// Carregar componentes da página
+async function carregarComponentes() {
+  try {
+      await Promise.all([
+          carregarHeader(),
+          carregarFooter()
+      ]);
+  } catch (error) {
+      console.error("Erro ao carregar componentes:", error);
+      mostrarFeedback("Erro ao carregar componentes da página", "erro");
+  }
+}
+
+// Função para carregar o cabeçalho
+async function carregarHeader() {
+  try {
+      const headerContainer = document.getElementById('header-container');
+      if (!headerContainer) return;
+
+      const response = await fetch('../html/header.html');
+      if (!response.ok) throw new Error('Erro ao carregar cabeçalho');
+      
+      headerContainer.innerHTML = await response.text();
+  } catch (error) {
+      console.error("Erro no carregamento do cabeçalho:", error);
+      throw error;
+  }
+}
+
+// Função para carregar o rodapé
+async function carregarFooter() {
+  try {
+      const footerContainer = document.getElementById('footer-container');
+      if (!footerContainer) return;
+
+      const response = await fetch('../html/footer.html');
+      if (!response.ok) throw new Error('Erro ao carregar rodapé');
+      
+      footerContainer.innerHTML = await response.text();
+  } catch (error) {
+      console.error("Erro no carregamento do rodapé:", error);
+      throw error;
+  }
+}
+
+// Funções de cálculo
 function ehFeriado(data) {
   return FERIADOS.has(data.toISOString().split("T")[0]);
 }
 
-// Função para calcular dias úteis (com validação adicional)
 function calcularDiasUteis() {
   try {
       const hoje = new Date();
@@ -90,74 +139,79 @@ function calcularDiasUteis() {
           }
       }
 
-      document.getElementById("diasUteis").value = diasUteis;
-      document.getElementById("diasTrabalhados").value = diasTrabalhados;
-      document.getElementById("diasFaltantes").value = diasUteis - diasTrabalhados;
+      if (elements.diasUteis) elements.diasUteis.value = diasUteis;
+      if (elements.diasTrabalhados) elements.diasTrabalhados.value = diasTrabalhados;
+      if (elements.diasFaltantes) elements.diasFaltantes.value = diasUteis - diasTrabalhados;
   } catch (error) {
       console.error("Erro ao calcular dias úteis:", error);
+      mostrarFeedback("Erro ao calcular dias úteis", "erro");
   }
 }
 
-// Funções de cálculo (com validação de entrada)
 function atualizarCamposDias() {
-  const getValue = (id) => {
-      const el = document.getElementById(id);
-      return el ? parseFloat(el.value) || 0 : 0;
-  };
+  try {
+      const getValue = (id) => {
+          const el = document.getElementById(id);
+          return el ? parseFloat(el.value) || 0 : 0;
+      };
 
-  const diasUteis = getValue("diasUteis");
-  const diasTrabalhados = getValue("diasTrabalhados");
-  const diasFaltantes = getValue("diasFaltantes");
+      const diasUteis = getValue("diasUteis");
+      const diasTrabalhados = getValue("diasTrabalhados");
+      const diasFaltantes = getValue("diasFaltantes");
 
-  if (!diasUteis && !diasTrabalhados && !diasFaltantes) return;
+      if (!diasUteis && !diasTrabalhados && !diasFaltantes) return;
 
-  // Lógica de cálculo mais segura
-  if (diasUteis && diasTrabalhados) {
-      document.getElementById("diasFaltantes").value = diasUteis - diasTrabalhados;
-  } else if (diasUteis && diasFaltantes) {
-      document.getElementById("diasTrabalhados").value = diasUteis - diasFaltantes;
-  } else if (diasTrabalhados && diasFaltantes) {
-      document.getElementById("diasUteis").value = diasTrabalhados + diasFaltantes;
+      if (diasUteis && diasTrabalhados) {
+          if (elements.diasFaltantes) elements.diasFaltantes.value = diasUteis - diasTrabalhados;
+      } else if (diasUteis && diasFaltantes) {
+          if (elements.diasTrabalhados) elements.diasTrabalhados.value = diasUteis - diasFaltantes;
+      } else if (diasTrabalhados && diasFaltantes) {
+          if (elements.diasUteis) elements.diasUteis.value = diasTrabalhados + diasFaltantes;
+      }
+  } catch (error) {
+      console.error("Erro ao atualizar campos de dias:", error);
   }
 }
 
 function calcularMixFaltante() {
-  const mixBase = document.getElementById("mix25").checked ? 25 : 30;
-  const mixMedio = parseFloat(document.getElementById("mixMedio").value) || 0;
-  const diasUteis = parseFloat(document.getElementById("diasUteis").value) || 0;
-  const diasTrabalhados = parseFloat(document.getElementById("diasTrabalhados").value) || 0;
-  const diasFaltantes = parseFloat(document.getElementById("diasFaltantes").value) || 0;
+  try {
+      const mixBase = elements.mix25?.checked ? 25 : 30;
+      const mixMedio = parseFloat(elements.mixMedio?.value) || 0;
+      const diasUteis = parseFloat(elements.diasUteis?.value) || 0;
+      const diasTrabalhados = parseFloat(elements.diasTrabalhados?.value) || 0;
+      const diasFaltantes = parseFloat(elements.diasFaltantes?.value) || 0;
 
-  if (mixMedio && diasFaltantes > 0) {
-      const mixFaltante = ((diasUteis * mixBase) - (diasTrabalhados * mixMedio)) / diasFaltantes;
-      document.getElementById("mixFaltante").value = mixFaltante.toFixed(2);
-  } else {
-      document.getElementById("mixFaltante").value = "";
-  }
-}
-
-// Inicialização dos cálculos (com delegação de eventos)
-function inicializarCalculos() {
-  calcularDiasUteis();
-  
-  const campos = ["diasUteis", "diasTrabalhados", "diasFaltantes", "mixMedio"];
-  campos.forEach(id => {
-      const element = document.getElementById(id);
-      if (element) {
-          element.addEventListener("input", () => {
-              atualizarCamposDias();
-              calcularMixFaltante();
-          });
+      if (mixMedio && diasFaltantes > 0) {
+          const mixFaltante = ((diasUteis * mixBase) - (diasTrabalhados * mixMedio)) / diasFaltantes;
+          if (elements.mixFaltante) elements.mixFaltante.value = mixFaltante.toFixed(2);
+      } else if (elements.mixFaltante) {
+          elements.mixFaltante.value = "";
       }
-  });
-
-  document.getElementById("mix25")?.addEventListener("change", calcularMixFaltante);
-  document.getElementById("mix30")?.addEventListener("change", calcularMixFaltante);
+  } catch (error) {
+      console.error("Erro ao calcular mix faltante:", error);
+  }
 }
 
-// Carregamento inicial seguro
-document.addEventListener('DOMContentLoaded', () => {
-  if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
+// Inicialização dos cálculos
+function inicializarCalculos() {
+  try {
+      calcularDiasUteis();
+      
+      const campos = ["diasUteis", "diasTrabalhados", "diasFaltantes", "mixMedio"];
+      campos.forEach(id => {
+          const element = document.getElementById(id);
+          if (element) {
+              element.addEventListener("input", () => {
+                  atualizarCamposDias();
+                  calcularMixFaltante();
+              });
+          }
+      });
+
+      elements.mix25?.addEventListener("change", calcularMixFaltante);
+      elements.mix30?.addEventListener("change", calcularMixFaltante);
+  } catch (error) {
+      console.error("Erro ao inicializar cálculos:", error);
+      mostrarFeedback("Erro ao inicializar cálculos", "erro");
   }
-});
+}

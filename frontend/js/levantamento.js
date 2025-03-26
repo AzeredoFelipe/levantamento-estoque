@@ -9,12 +9,26 @@ const firebaseConfig = {
     measurementId: "G-3ETPR2T1PM"
 };
 
-// Inicialização do Firebase
+// Inicialização segura do Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// Sistema de feedback
+function mostrarFeedback(mensagem, tipo = "sucesso") {
+    const feedbackElement = document.getElementById('feedback-mensagem');
+    if (feedbackElement) {
+        feedbackElement.textContent = mensagem;
+        feedbackElement.className = `alert alert-${tipo === 'sucesso' ? 'success' : 'danger'}`;
+        feedbackElement.style.display = 'block';
+        
+        setTimeout(() => {
+            feedbackElement.style.display = 'none';
+        }, 5000);
+    }
+}
 
 // Variáveis globais
 let produtosSelecionados = [];
@@ -34,14 +48,15 @@ const elements = {
     relatorioData: document.getElementById('relatorioData'),
     relatorioItens: document.getElementById('relatorioItens'),
     btnImprimirRelatorio: document.getElementById('btnImprimirRelatorio'),
-    btnFinalizarLevantamento: document.getElementById('btnFinalizarLevantamento')
+    btnFinalizarLevantamento: document.getElementById('btnFinalizarLevantamento'),
+    painelHistorico: document.getElementById('painelHistorico'),
+    btnFecharHistorico: document.getElementById('btnFecharHistorico'),
+    tabelaHistorico: document.getElementById('tabelaHistorico')
 };
 
 // Inicialização da aplicação
 document.addEventListener('DOMContentLoaded', () => {
-    carregarComponentes();
     verificarAutenticacao();
-    configurarEventos();
 });
 
 // Funções principais
@@ -51,7 +66,17 @@ async function verificarAutenticacao() {
         window.location.href = "/index.html";
         return;
     }
-    await carregarDados(userId);
+    
+    try {
+        await Promise.all([
+            carregarComponentes(),
+            carregarDados(userId)
+        ]);
+        configurarEventos();
+    } catch (error) {
+        console.error("Erro na inicialização:", error);
+        mostrarFeedback("Erro ao carregar a página", "erro");
+    }
 }
 
 async function carregarComponentes() {
@@ -62,26 +87,29 @@ async function carregarComponentes() {
         ]);
     } catch (error) {
         console.error("Erro ao carregar componentes:", error);
+        throw error;
     }
 }
 
 async function carregarHeader() {
     try {
-        const response = await fetch('/html/header.html');
-        const html = await response.text();
-        document.getElementById('header-container').innerHTML = html;
+        const response = await fetch('../html/header.html');
+        if (!response.ok) throw new Error('Erro ao carregar cabeçalho');
+        document.getElementById('header-container').innerHTML = await response.text();
     } catch (error) {
-        console.error("Erro ao carregar cabeçalho:", error);
+        console.error("Erro no carregamento do cabeçalho:", error);
+        throw error;
     }
 }
 
 async function carregarFooter() {
     try {
-        const response = await fetch('/html/footer.html');
-        const html = await response.text();
-        document.getElementById('footer-container').innerHTML = html;
+        const response = await fetch('../html/footer.html');
+        if (!response.ok) throw new Error('Erro ao carregar rodapé');
+        document.getElementById('footer-container').innerHTML = await response.text();
     } catch (error) {
-        console.error("Erro ao carregar rodapé:", error);
+        console.error("Erro no carregamento do rodapé:", error);
+        throw error;
     }
 }
 
@@ -90,10 +118,13 @@ async function carregarDados(userId) {
         await Promise.all([
             carregarClientes(userId),
             carregarGrupos(userId),
-            carregarProdutos(userId)
+            carregarProdutos(userId),
+            carregarHistorico(userId)
         ]);
     } catch (error) {
         console.error("Erro ao carregar dados:", error);
+        mostrarFeedback("Erro ao carregar dados", "erro");
+        throw error;
     }
 }
 
@@ -112,6 +143,8 @@ async function carregarClientes(userId) {
         });
     } catch (error) {
         console.error("Erro ao carregar clientes:", error);
+        mostrarFeedback("Erro ao carregar lista de clientes", "erro");
+        throw error;
     }
 }
 
@@ -130,6 +163,8 @@ async function carregarGrupos(userId) {
         });
     } catch (error) {
         console.error("Erro ao carregar grupos:", error);
+        mostrarFeedback("Erro ao carregar grupos de produtos", "erro");
+        throw error;
     }
 }
 
@@ -168,24 +203,67 @@ async function carregarProdutos(userId) {
     } catch (error) {
         console.error("Erro ao carregar produtos:", error);
         elements.tabelaProdutos.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Erro ao carregar produtos</td></tr>';
+        mostrarFeedback("Erro ao carregar produtos", "erro");
+        throw error;
+    }
+}
+
+async function carregarHistorico(userId) {
+    try {
+        if (!elements.tabelaHistorico) return;
+        
+        elements.tabelaHistorico.innerHTML = '<tr><td colspan="4">Carregando histórico...</td></tr>';
+        
+        const snapshot = await db.collection('vendedores').doc(userId).collection('levantamentos')
+            .orderBy('data', 'desc')
+            .limit(10)
+            .get();
+        
+        if (snapshot.empty) {
+            elements.tabelaHistorico.innerHTML = '<tr><td colspan="4">Nenhum histórico encontrado</td></tr>';
+            return;
+        }
+
+        let html = '';
+        snapshot.forEach(doc => {
+            const levantamento = doc.data();
+            html += `
+                <tr>
+                    <td>${new Date(levantamento.data?.toDate()).toLocaleDateString()}</td>
+                    <td>${levantamento.clienteNome}</td>
+                    <td>${levantamento.produtos?.length || 0}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary btn-ver-levantamento" data-id="${doc.id}">
+                            <i class="bi bi-eye"></i> Ver
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        elements.tabelaHistorico.innerHTML = html;
+    } catch (error) {
+        console.error("Erro ao carregar histórico:", error);
+        if (elements.tabelaHistorico) {
+            elements.tabelaHistorico.innerHTML = '<tr><td colspan="4">Erro ao carregar histórico</td></tr>';
+        }
     }
 }
 
 // Funções de eventos
 function configurarEventos() {
     // Filtros
-    elements.grupoSelect.addEventListener('change', filtrarProdutos);
-    elements.searchInput.addEventListener('input', filtrarProdutos);
+    elements.grupoSelect?.addEventListener('change', filtrarProdutos);
+    elements.searchInput?.addEventListener('input', filtrarProdutos);
     
     // Botões principais
-    elements.btnRelatorio.addEventListener('click', mostrarRelatorio);
-    elements.btnFecharRelatorio.addEventListener('click', () => {
-        elements.painelRelatorio.classList.add('d-none');
-    });
-    elements.btnCompartilhar.addEventListener('click', compartilharWhatsApp);
-    elements.btnLimpar.addEventListener('click', limparLevantamento);
-    elements.btnImprimirRelatorio.addEventListener('click', imprimirRelatorio);
-    elements.btnFinalizarLevantamento.addEventListener('click', finalizarLevantamento);
+    elements.btnRelatorio?.addEventListener('click', mostrarRelatorio);
+    elements.btnFecharRelatorio?.addEventListener('click', () => elements.painelRelatorio?.classList.add('d-none'));
+    elements.btnCompartilhar?.addEventListener('click', compartilharWhatsApp);
+    elements.btnLimpar?.addEventListener('click', limparLevantamento);
+    elements.btnImprimirRelatorio?.addEventListener('click', imprimirRelatorio);
+    elements.btnFinalizarLevantamento?.addEventListener('click', finalizarLevantamento);
+    elements.btnFecharHistorico?.addEventListener('click', () => elements.painelHistorico?.classList.add('d-none'));
 }
 
 function adicionarEventosProdutos() {
@@ -204,8 +282,8 @@ function adicionarEventosProdutos() {
 }
 
 function filtrarProdutos() {
-    const filtroGrupo = elements.grupoSelect.value;
-    const filtroTexto = elements.searchInput.value.toLowerCase();
+    const filtroGrupo = elements.grupoSelect?.value || '';
+    const filtroTexto = elements.searchInput?.value.toLowerCase() || '';
     
     document.querySelectorAll("#tabelaProdutos tr").forEach(row => {
         if (!row.dataset.id) return;
@@ -222,7 +300,6 @@ function filtrarProdutos() {
 
 // Funções de negócio
 function adicionarProduto(produto, botao) {
-    // Verifica se já existe
     const index = produtosSelecionados.findIndex(p => p.id === produto.id);
     
     if (index >= 0) {
@@ -246,16 +323,14 @@ function adicionarProduto(produto, botao) {
 
 function mostrarRelatorio() {
     if (produtosSelecionados.length === 0) {
-        alert('Nenhum produto foi adicionado ao levantamento ainda.');
+        mostrarFeedback("Nenhum produto foi adicionado ao levantamento ainda.", "erro");
         return;
     }
     
-    // Atualiza dados do relatório
-    const clienteSelecionado = elements.clienteSelect.options[elements.clienteSelect.selectedIndex]?.text || 'Não selecionado';
+    const clienteSelecionado = elements.clienteSelect?.options[elements.clienteSelect.selectedIndex]?.text || 'Não selecionado';
     elements.relatorioCliente.textContent = clienteSelecionado;
     elements.relatorioData.textContent = new Date().toLocaleDateString();
     
-    // Preenche itens
     let html = '';
     produtosSelecionados.forEach(produto => {
         html += `
@@ -268,58 +343,16 @@ function mostrarRelatorio() {
     });
     elements.relatorioItens.innerHTML = html;
     
-    // Mostra painel
     elements.painelRelatorio.classList.remove('d-none');
-}<!-- Adicione este card após o painelRelatorio -->
-<div class="card shadow-sm mb-4" id="painelHistorico">
-    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Histórico de Levantamentos</h5>
-        <button type="button" class="btn-close btn-close-white" id="btnFecharHistorico"></button>
-    </div>
-    <div class="card-body">
-        <!-- Filtros do Histórico -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <label for="filtroClienteHistorico" class="form-label">Cliente</label>
-                <select class="form-select" id="filtroClienteHistorico">
-                    <option value="">Todos os clientes</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label for="filtroDataInicio" class="form-label">Data Início</label>
-                <input type="date" class="form-control" id="filtroDataInicio">
-            </div>
-            <div class="col-md-4">
-                <label for="filtroDataFim" class="form-label">Data Fim</label>
-                <input type="date" class="form-control" id="filtroDataFim">
-            </div>
-        </div>
+}
 
-        <!-- Tabela de Histórico -->
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Data</th>
-                        <th>Cliente</th>
-                        <th>Qtd. Itens</th>
-                        <th class="text-end">Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tabelaHistorico">
-                    <!-- Histórico será carregado aqui -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
 function compartilharWhatsApp() {
     if (produtosSelecionados.length === 0) {
-        alert('Adicione produtos antes de compartilhar.');
+        mostrarFeedback("Adicione produtos antes de compartilhar.", "erro");
         return;
     }
     
-    const cliente = elements.clienteSelect.options[elements.clienteSelect.selectedIndex]?.text || 'Cliente não especificado';
+    const cliente = elements.clienteSelect?.options[elements.clienteSelect.selectedIndex]?.text || 'Cliente não especificado';
     
     let message = `*Levantamento de Estoque*\n\n`;
     message += `*Cliente:* ${cliente}\n`;
@@ -344,7 +377,7 @@ function limparLevantamento() {
             input.value = '0';
         });
         elements.painelRelatorio.classList.add('d-none');
-        alert('Levantamento limpo com sucesso!');
+        mostrarFeedback("Levantamento limpo com sucesso!");
     }
 }
 
@@ -354,15 +387,15 @@ function imprimirRelatorio() {
 
 async function finalizarLevantamento() {
     const userId = localStorage.getItem('userId');
-    const clienteId = elements.clienteSelect.value;
+    const clienteId = elements.clienteSelect?.value;
     
     if (!clienteId) {
-        alert('Selecione um cliente antes de finalizar.');
+        mostrarFeedback("Selecione um cliente antes de finalizar.", "erro");
         return;
     }
     
     if (produtosSelecionados.length === 0) {
-        alert('Adicione produtos antes de finalizar.');
+        mostrarFeedback("Adicione produtos antes de finalizar.", "erro");
         return;
     }
     
@@ -370,7 +403,7 @@ async function finalizarLevantamento() {
         elements.btnFinalizarLevantamento.disabled = true;
         elements.btnFinalizarLevantamento.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
         
-        const levantamentoRef = await db.collection('vendedores')
+        await db.collection('vendedores')
             .doc(userId)
             .collection('levantamentos')
             .add({
@@ -381,11 +414,12 @@ async function finalizarLevantamento() {
                 status: 'finalizado'
             });
         
-        alert('Levantamento finalizado e salvo com sucesso!');
+        mostrarFeedback("Levantamento finalizado e salvo com sucesso!");
         limparLevantamento();
+        await carregarHistorico(userId);
     } catch (error) {
         console.error("Erro ao salvar levantamento:", error);
-        alert("Erro ao salvar levantamento. Tente novamente.");
+        mostrarFeedback("Erro ao salvar levantamento. Tente novamente.", "erro");
     } finally {
         elements.btnFinalizarLevantamento.disabled = false;
         elements.btnFinalizarLevantamento.innerHTML = '<i class="bi bi-check-circle me-1"></i> Finalizar Levantamento';
