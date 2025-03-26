@@ -5,13 +5,19 @@
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
+    "dev": "concurrently \"vite\" \"nodemon backend/server.js\"",
     "dev-backend": "nodemon backend/server.js",
-    "dev": "vite",
-    "build": "vite build"
+    "dev-frontend": "vite",
+    "build": "vite build && cp -r frontend/html backend/public/html",
+    "predeploy": "npm run build",
+    "serve": "node backend/server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "firebase": "^10.1.0"
+    "firebase": "^10.1.0",
+    "firebase-admin": "^11.5.0",
+    "concurrently": "^8.2.1",
+    "cors": "^2.8.5"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
