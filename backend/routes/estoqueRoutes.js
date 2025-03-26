@@ -1,21 +1,56 @@
 const express = require('express');
 const router = express.Router();
+const admin = require('firebase-admin');
 
-// Rota para cadastrar um item
-router.post('/cadastrar-item', (req, res) => {
-    const item = req.body;
-    console.log('Item recebido:', item);
-    // Aqui você pode salvar o item no banco de dados
-    res.json({ success: true, message: 'Item cadastrado com sucesso!' });
+// Middleware de autenticação
+const autenticarUsuario = async (req, res, next) => {
+    const idToken = req.headers.authorization;
+    try {
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        req.userId = decodedToken.uid;
+        next();
+    } catch (error) {
+        res.status(401).json({ error: "Não autorizado" });
+    }
+};
+
+// Rota para cadastrar item específica do usuário
+router.post('/cadastrar-item', autenticarUsuario, async (req, res) => {
+    try {
+        const userId = req.userId;
+        const item = req.body;
+        
+        const docRef = await admin.firestore()
+            .collection('vendedores')
+            .doc(userId)
+            .collection('itens')
+            .add(item);
+            
+        res.json({ success: true, id: docRef.id });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
-// Rota para listar itens
-router.get('/listar-itens', (req, res) => {
-    const itens = [
-        { nome: 'Item 1', quantidade: 10 },
-        { nome: 'Item 2', quantidade: 5 }
-    ];
-    res.json(itens);
+// Rota para listar itens do usuário
+router.get('/listar-itens', autenticarUsuario, async (req, res) => {
+    try {
+        const userId = req.userId;
+        const snapshot = await admin.firestore()
+            .collection('vendedores')
+            .doc(userId)
+            .collection('itens')
+            .get();
+            
+        const itens = [];
+        snapshot.forEach(doc => {
+            itens.push({ id: doc.id, ...doc.data() });
+        });
+        
+        res.json(itens);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
-module.exports = router; // Exporta o router corretamente
+module.exports = router;

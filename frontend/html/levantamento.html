@@ -4,118 +4,127 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Levantamento de Estoque</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css">
-    <link rel="icon" type="image/x-icon" href="/Imagens/logoMarcas144x144.png">
-    <link rel="manifest" href="/js/manifest.json">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/index.css">
+    <link rel="manifest" href="/js/manifest.json">
 </head>
 <body>
-    <!-- Container do cabeçalho (Carregado via JavaScript) -->
     <div id="header-container"></div>
 
-    <!-- Tabela de Levantamento de Estoque -->
-    <div class="container mt-3">
-        <!-- Cabeçalho "Levantamento de Estoque" e botões fixos -->
-        <div class="sticky-header">
-            <h2>Levantamento de Estoque</h2>
-            <div class="d-flex mb-3 gap-3">
-                <!-- Seleção de Cliente -->
-                <div class="mb-3">
-                    <label for="cliente" class="form-label">Cliente</label>
-                    <select class="form-select" id="cliente" required>
-                        <option value="">Selecione um cliente</option>
-                        <!-- Clientes serão carregados dinamicamente -->
-                    </select>
+    <div class="container-fluid mt-3">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard-data me-2"></i>Levantamento de Estoque</h5>
+            </div>
+            <div class="card-body">
+                <!-- Filtros -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label for="cliente" class="form-label">Cliente</label>
+                        <select class="form-select" id="cliente" required>
+                            <option value="">Selecione um cliente</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="grupoProduto" class="form-label">Filtrar por Grupo</label>
+                        <select class="form-select" id="grupoProduto">
+                            <option value="">Todos os produtos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="searchInput" class="form-label">Pesquisar Produto</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="searchInput" placeholder="Digite o nome...">
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Menu de Grupos -->
-                <div class="mb-3">
-                    <label for="grupoProduto" class="form-label">Grupo do Produto</label>
-                    <select class="form-select" id="grupoProduto" required>
-                        <option value="">Todos Produtos</option>
-                        <!-- Grupos serão carregados dinamicamente -->
-                    </select>
+                <!-- Ações Rápidas -->
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <button id="btnRelatorio" class="btn btn-outline-primary">
+                        <i class="bi bi-file-earmark-text me-1"></i> Ver Relatório
+                    </button>
+                    <button id="btnCompartilhar" class="btn btn-outline-success">
+                        <i class="bi bi-whatsapp me-1"></i> Compartilhar
+                    </button>
+                    <button id="btnLimpar" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-1"></i> Limpar Tudo
+                    </button>
+                </div>
+
+                <!-- Tabela de Produtos -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="40%">Produto</th>
+                                <th width="20%">Estoque</th>
+                                <th width="20%">Sugestão</th>
+                                <th width="20%" class="text-center">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaProdutos">
+                            <!-- Produtos serão carregados aqui -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
-        <!-- Campo de pesquisa -->
-        <div class="input-group mb-3">
-            <input type="text" class="form-control" id="searchInput" placeholder="Digite o nome do produto">
-            <span class="input-group-text">
-                <i class="bi bi-search"></i> <!-- Ícone de lupa -->
-            </span>
+        <!-- Painel do Relatório (inicialmente oculto) -->
+        <div class="card shadow-sm mb-4 d-none" id="painelRelatorio">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-file-text me-2"></i>Relatório do Levantamento</h5>
+                <button type="button" class="btn-close btn-close-white" id="btnFecharRelatorio"></button>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6><strong>Cliente:</strong> <span id="relatorioCliente">Não selecionado</span></h6>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <h6><strong>Data:</strong> <span id="relatorioData"></span></h6>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Produto</th>
+                                <th class="text-end">Estoque</th>
+                                <th class="text-end">Sugestão</th>
+                            </tr>
+                        </thead>
+                        <tbody id="relatorioItens">
+                            <!-- Itens do relatório serão inseridos aqui -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <button class="btn btn-sm btn-outline-primary" id="btnImprimirRelatorio">
+                        <i class="bi bi-printer me-1"></i> Imprimir
+                    </button>
+                    <button class="btn btn-sm btn-success" id="btnFinalizarLevantamento">
+                        <i class="bi bi-check-circle me-1"></i> Finalizar Levantamento
+                    </button>
+                </div>
+            </div>
         </div>
-
-        <!-- Botões de Ação -->
-        <div class="d-flex align-items-center gap-4 mb-3">
-            <button id="shareButton" class="btn btn-success">
-                <img src="../Imagens/compartilhar.png" alt="Compartilhar" id="shareImage">
-            </button>
-            <button id="limparDados" class="btn btn-danger">Limpar Dados</button>
-            <button id="verHistorico" class="btn btn-info">Ver Histórico</button>
-        </div>
-
-        <!-- Tabela de produtos -->
-        <table class="table table-striped table-bordered">
-            <thead class="custom-table-header">
-                <tr>
-                    <th>NOME PRODUTO</th>
-                    <th>ESTOQUE</th>
-                    <th>SUGESTÃO</th>
-                    <th>AÇÕES</th>
-                </tr>
-            </thead>
-            <tbody id="tabelaProdutos">
-                <!-- Produtos serão carregados aqui dinamicamente -->
-            </tbody>
-        </table>
-
-        <!-- Tabela de Produtos Levantados -->
-        <h3 class="mt-4">Produtos Levantados</h3>
-        <table class="table table-striped table-bordered">
-            <thead class="custom-table-header">
-                <tr>
-                    <th>NOME PRODUTO</th>
-                    <th>ESTOQUE</th>
-                    <th>SUGESTÃO</th>
-                </tr>
-            </thead>
-            <tbody id="tabelaProdutosLevantados">
-                <!-- Produtos levantados serão exibidos aqui -->
-            </tbody>
-        </table>
     </div>
 
-    <!-- Container do rodapé (Carregado via JavaScript) -->
-    <div id="footer-container"></div> 
-    
-    <!-- Registrar Service Worker -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/js/sw.js')
-                .then(() => console.log('Service Worker registrado com sucesso!'))
-                .catch((error) => console.error('Falha ao registrar o Service Worker:', error));
-        }
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const userId = localStorage.getItem('userId');
-            if (!userId) {
-                // Se não houver UID no localStorage, redireciona para a página de login
-                window.location.href = "/index.html";
-            }
-        });
-    </script>
-    
-    <!-- Scripts do Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script> 
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <div id="footer-container"></div>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     <script src="/js/levantamento.js"></script>
 </body>
 </html>

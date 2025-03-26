@@ -9,342 +9,530 @@ const firebaseConfig = {
     measurementId: "G-3ETPR2T1PM"
 };
 
-// Inicializa o Firebase
-const app = firebase.initializeApp(firebaseConfig);
+// Inicialização do Firebase
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Listener para verificar o estado de autenticação
+// Variáveis globais
+let produtoEmEdicao = null;
+
+// Listener de autenticação
 auth.onAuthStateChanged((user) => {
     if (user) {
-        // Usuário está autenticado, pode acessar user.uid
-        const uid = user.uid;
-        console.log("Usuário autenticado, UID:", uid);
-
-        // Chame as funções que dependem do UID aqui
-        carregarGrupos(uid);
-        carregarProdutos(uid);
-
-        // Configura os eventos após o carregamento da página
-        configurarEventos();
+        console.log("Usuário autenticado:", user.uid);
+        inicializarAplicacao(user.uid);
     } else {
-        // Usuário não está autenticado
-        console.log("Usuário não autenticado");
-        // Redirecione para a página de login ou mostre uma mensagem de erro
-        window.location.href = "/"; // Redireciona para a página inicial
+        console.log("Usuário não autenticado - redirecionando...");
+        window.location.href = "/index.html";
     }
 });
 
-// Função para carregar o cabeçalho
+// Função principal de inicialização
+async function inicializarAplicacao(userId) {
+    try {
+        await carregarComponentes();
+        await carregarGruposParaSelect(userId);
+        await carregarGruposParaFiltro(userId);
+        configurarEventos();
+        mostrarEstadoInicial();
+        mostrarFeedback("Sistema carregado com sucesso!", "success");
+    } catch (error) {
+        console.error("Erro na inicialização:", error);
+        mostrarFeedback("Erro ao carregar o sistema", "danger");
+    }
+}
+
+// Mostra o estado inicial da tabela
+function mostrarEstadoInicial() {
+    const tabela = document.getElementById('tabelaProdutos');
+    if (!tabela) return;
+    
+    tabela.innerHTML = `
+        <tr>
+            <td colspan="3" class="text-center text-muted py-4">
+                <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
+                Use os filtros acima para buscar produtos
+            </td>
+        </tr>
+    `;
+    
+    const contador = document.getElementById('contadorProdutos');
+    if (contador) {
+        contador.textContent = '0';
+    }
+}
+
+// Função para mostrar feedback
+function mostrarFeedback(mensagem, tipo = "success") {
+    const feedbackElement = document.createElement('div');
+    feedbackElement.className = `alert alert-${tipo} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    feedbackElement.style.zIndex = '1000';
+    feedbackElement.role = 'alert';
+    feedbackElement.innerHTML = `
+        ${mensagem}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    document.body.appendChild(feedbackElement);
+    
+    setTimeout(() => {
+        feedbackElement.remove();
+    }, 5000);
+}
+
+// Carregar componentes da página
+async function carregarComponentes() {
+    try {
+        await Promise.all([carregarHeader(), carregarFooter()]);
+    } catch (error) {
+        console.error("Erro ao carregar componentes:", error);
+        throw error;
+    }
+}
+
 async function carregarHeader() {
     const headerContainer = document.getElementById('header-container');
-    if (headerContainer) {
-        try {
-            const response = await fetch('/html/header.html'); // Busca o arquivo header.html
-            const html = await response.text();
-            headerContainer.innerHTML = html;
-        } catch (error) {
-            console.error("Erro ao carregar o cabeçalho:", error);
-        }
+    if (!headerContainer) return;
+
+    try {
+        const response = await fetch('/html/header.html');
+        if (!response.ok) throw new Error('Erro ao carregar cabeçalho');
+        headerContainer.innerHTML = await response.text();
+    } catch (error) {
+        console.error("Erro no cabeçalho:", error);
+        throw error;
     }
 }
 
-// Função para carregar o rodapé
 async function carregarFooter() {
     const footerContainer = document.getElementById('footer-container');
-    if (footerContainer) {
-        try {
-            const response = await fetch('/html/footer.html'); // Busca o arquivo footer.html
-            const html = await response.text();
-            footerContainer.innerHTML = html;
-        } catch (error) {
-            console.error("Erro ao carregar o rodapé:", error);
-        }
+    if (!footerContainer) return;
+
+    try {
+        const response = await fetch('/html/footer.html');
+        if (!response.ok) throw new Error('Erro ao carregar rodapé');
+        footerContainer.innerHTML = await response.text();
+    } catch (error) {
+        console.error("Erro no rodapé:", error);
+        throw error;
     }
 }
 
-// Função para exibir/ocultar o campo de novo grupo
-function toggleCampoNovoGrupo() {
-    const campoNovoGrupo = document.getElementById('campoNovoGrupo');
-    campoNovoGrupo.style.display = campoNovoGrupo.style.display === 'none' ? 'block' : 'none';
+// Configuração de eventos
+function configurarEventos() {
+    // Formulário de cadastro
+    const formCadastro = document.getElementById('formCadastro');
+    if (formCadastro) {
+        formCadastro.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const user = auth.currentUser;
+            if (user) {
+                produtoEmEdicao ? editarProduto(user.uid) : cadastrarProduto(user.uid);
+            }
+        });
+    }
+
+    // Botão adicionar grupo
+    document.getElementById('btnAdicionarGrupo')?.addEventListener('click', toggleCampoNovoGrupo);
+    
+    // Botão salvar grupo
+    document.getElementById('btnSalvarGrupo')?.addEventListener('click', salvarNovoGrupo);
+    
+    // Botão cancelar edição
+    document.getElementById('btnCancelarEdicao')?.addEventListener('click', cancelarEdicao);
+    
+    // Configurar pesquisa e filtros
+    configurarPesquisa();
 }
 
-// Função para ocultar/mostrar o ícone de "+"
-function toggleIconeAdicionarGrupo(mostrar) {
-    const btnAdicionarGrupo = document.getElementById('btnAdicionarGrupo');
-    if (btnAdicionarGrupo) {
-        btnAdicionarGrupo.style.display = mostrar ? 'block' : 'none';
+// Funções para grupos
+async function carregarGruposParaSelect(userId) {
+    const select = document.getElementById('grupoProduto');
+    if (!select) return;
+
+    try {
+        select.innerHTML = '<option value="">Selecione um grupo</option>';
+        const snapshot = await db.collection('vendedores').doc(userId).collection('grupos').orderBy('nome').get();
+        
+        snapshot.forEach(doc => {
+            const option = document.createElement('option');
+            option.value = doc.data().nome;
+            option.textContent = doc.data().nome;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar grupos:", error);
+        throw error;
     }
 }
 
-// Função para adicionar um novo grupo
-async function adicionarGrupo() {
-    const novoGrupo = document.getElementById('novoGrupo').value.trim();
+async function carregarGruposParaFiltro(userId) {
+    const select = document.getElementById('grupoProdutoFilter');
+    if (!select) return;
 
-    if (!novoGrupo) {
-        alert('Por favor, insira o nome do grupo.');
+    try {
+        select.innerHTML = '<option value="">Todos os grupos</option>';
+        const snapshot = await db.collection('vendedores').doc(userId).collection('grupos').orderBy('nome').get();
+        
+        snapshot.forEach(doc => {
+            const option = document.createElement('option');
+            option.value = doc.data().nome;
+            option.textContent = doc.data().nome;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar grupos para filtro:", error);
+        throw error;
+    }
+}
+
+async function salvarNovoGrupo() {
+    const user = auth.currentUser;
+    if (!user) {
+        mostrarFeedback("Sessão expirada. Faça login novamente.", "danger");
         return;
     }
 
-    const userId = auth.currentUser.uid; // ID do vendedor logado
-    const gruposRef = db.collection('vendedores').doc(userId).collection('grupos');
+    const nomeGrupo = document.getElementById('novoGrupo')?.value.trim();
+    if (!nomeGrupo || nomeGrupo.length < 2) {
+        mostrarFeedback("Nome do grupo deve ter pelo menos 2 caracteres", "warning");
+        return;
+    }
 
     try {
-        // Verifica se o grupo já existe
-        const querySnapshot = await gruposRef.where('nome', '==', novoGrupo).get();
+        // Verifica se grupo já existe
+        const snapshot = await db.collection('vendedores')
+            .doc(user.uid)
+            .collection('grupos')
+            .where('nome', '==', nomeGrupo)
+            .get();
 
-        if (!querySnapshot.empty) {
-            alert('Este grupo já existe!');
+        if (!snapshot.empty) {
+            mostrarFeedback("Este grupo já existe!", "warning");
             return;
         }
 
-        // Adiciona o novo grupo ao Firestore
-        await gruposRef.add({ nome: novoGrupo });
-        alert('Grupo adicionado com sucesso!');
-        document.getElementById('novoGrupo').value = ''; // Limpa o campo
-        carregarGrupos(userId); // Atualiza a lista de grupos no select
-        toggleCampoNovoGrupo(); // Oculta o campo de novo grupo após salvar
+        // Adiciona novo grupo
+        await db.collection('vendedores')
+            .doc(user.uid)
+            .collection('grupos')
+            .add({
+                nome: nomeGrupo,
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+        mostrarFeedback("Grupo adicionado com sucesso!", "success");
+        document.getElementById('novoGrupo').value = '';
+        toggleCampoNovoGrupo();
+        await Promise.all([
+            carregarGruposParaSelect(user.uid),
+            carregarGruposParaFiltro(user.uid)
+        ]);
     } catch (error) {
-        console.error('Erro ao adicionar grupo: ', error);
-        alert('Erro ao adicionar grupo. Tente novamente.');
+        console.error("Erro ao salvar grupo:", error);
+        mostrarFeedback("Erro ao salvar grupo", "danger");
     }
 }
 
-// Função para carregar os grupos no select
-async function carregarGrupos(userId) {
-    const grupoSelect = document.getElementById('grupoProduto');
-    grupoSelect.innerHTML = '<option value="">Selecione um grupo</option>'; // Limpa as opções
-
+// Funções para produtos
+async function cadastrarProduto(userId) {
+    const btnSubmit = document.getElementById('btnSubmitForm');
+    const originalText = btnSubmit.innerHTML;
+    
     try {
-        const gruposRef = db.collection('vendedores').doc(userId).collection('grupos');
-        const querySnapshot = await gruposRef.get();
-        querySnapshot.forEach((doc) => {
-            const grupo = doc.data().nome;
-            const option = document.createElement('option');
-            option.value = grupo;
-            option.textContent = grupo;
-            grupoSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Erro ao carregar grupos: ', error);
-    }
-}
+        // Mostrar loading
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Salvando...';
 
-// Função para adicionar um produto ao Firestore e à tabela
-async function adicionarProduto(event) {
-    event.preventDefault();
+        const nomeProduto = document.getElementById('nomeProduto').value.trim();
+        const grupoProduto = document.getElementById('grupoProduto').value;
 
-    const nomeProduto = document.getElementById('nomeProduto').value;
-    const grupoProduto = document.getElementById('grupoProduto').value;
+        if (!validarDadosProduto(nomeProduto, grupoProduto)) return;
 
-    if (!nomeProduto || !grupoProduto) {
-        alert('Por favor, preencha todos os campos.');
-        return;
-    }
+        await db.collection('vendedores')
+            .doc(userId)
+            .collection('produtos')
+            .add({
+                nome: nomeProduto,
+                grupo: grupoProduto,
+                criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
-    const userId = auth.currentUser.uid; // ID do vendedor logado
-    const produtosRef = db.collection('vendedores').doc(userId).collection('produtos');
-
-    try {
-        // Adiciona os dados ao Firestore
-        await produtosRef.add({
-            nome: nomeProduto,
-            grupo: grupoProduto
-        });
-        alert('Produto cadastrado com sucesso!');
+        mostrarFeedback("Produto cadastrado com sucesso!", "success");
         document.getElementById('formCadastro').reset();
-        carregarProdutos(userId); // Atualiza a lista de produtos
+        await carregarProdutos(userId);
     } catch (error) {
-        console.error('Erro ao salvar produto: ', error);
-        alert('Erro ao cadastrar produto. Tente novamente.');
+        console.error("Erro ao cadastrar produto:", error);
+        mostrarFeedback("Erro ao cadastrar produto", "danger");
+    } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalText;
     }
 }
 
-// Função para carregar e exibir os produtos na tabela
-async function carregarProdutos(userId) {
-    const tabelaBody = document.querySelector('#tabelaProdutos tbody');
-    tabelaBody.innerHTML = '';
+async function editarProduto(userId) {
+    if (!produtoEmEdicao) return;
+
+    const btnSubmit = document.getElementById('btnSubmitForm');
+    const originalText = btnSubmit.innerHTML;
+    
+    try {
+        // Mostrar loading
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Atualizando...';
+
+        const nomeProduto = document.getElementById('nomeProduto').value.trim();
+        const grupoProduto = document.getElementById('grupoProduto').value;
+
+        if (!validarDadosProduto(nomeProduto, grupoProduto)) return;
+
+        await db.collection('vendedores')
+            .doc(userId)
+            .collection('produtos')
+            .doc(produtoEmEdicao.id)
+            .update({
+                nome: nomeProduto,
+                grupo: grupoProduto,
+                atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+        mostrarFeedback("Produto atualizado com sucesso!", "success");
+        document.getElementById('formCadastro').reset();
+        produtoEmEdicao = null;
+        document.getElementById('btnCancelarEdicao').style.display = 'none';
+        await carregarProdutos(userId);
+    } catch (error) {
+        console.error("Erro ao editar produto:", error);
+        mostrarFeedback("Erro ao editar produto", "danger");
+    } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalText;
+    }
+}
+
+function validarDadosProduto(nome, grupo) {
+    if (!nome || nome.length < 2) {
+        mostrarFeedback("Nome do produto deve ter pelo menos 2 caracteres", "warning");
+        return false;
+    }
+    if (!grupo) {
+        mostrarFeedback("Selecione um grupo para o produto", "warning");
+        return false;
+    }
+    return true;
+}
+
+// Configuração da pesquisa
+function configurarPesquisa() {
+    const searchInput = document.getElementById('searchProdutos');
+    const grupoFilter = document.getElementById('grupoProdutoFilter');
+    const btnLimpar = document.getElementById('btnLimparFiltros');
+
+    let timeout;
+    const executarBusca = () => {
+        const user = auth.currentUser;
+        if (!user) return;
+        
+        const texto = searchInput.value.trim().toLowerCase();
+        const grupo = grupoFilter.value;
+        
+        // Se ambos os filtros estiverem vazios, mostra estado inicial
+        if (!texto && !grupo) {
+            mostrarEstadoInicial();
+            return;
+        }
+        
+        carregarProdutos(user.uid, texto, grupo);
+    };
+
+    // Debounce para a busca
+    if (searchInput) {
+        searchInput.addEventListener('input', () => {
+            clearTimeout(timeout);
+            timeout = setTimeout(executarBusca, 400);
+        });
+    }
+
+    // Filtro por grupo
+    if (grupoFilter) {
+        grupoFilter.addEventListener('change', executarBusca);
+    }
+
+    // Botão limpar filtros
+    if (btnLimpar) {
+        btnLimpar.addEventListener('click', () => {
+            searchInput.value = '';
+            grupoFilter.value = '';
+            mostrarEstadoInicial();
+        });
+    }
+}
+
+// Carregar produtos com filtros
+async function carregarProdutos(userId, filtroTexto = '', grupoSelecionado = '') {
+    const tabela = document.getElementById('tabelaProdutos');
+    const contador = document.getElementById('contadorProdutos');
+    
+    if (!tabela) return;
 
     try {
-        const produtosRef = db.collection('vendedores').doc(userId).collection('produtos');
-        const querySnapshot = await produtosRef.get();
-        querySnapshot.forEach((doc) => {
-            const produto = doc.data();
-            const row = `
+        // Mostrar estado de carregamento
+        tabela.innerHTML = '<tr><td colspan="3" class="text-center py-4">Carregando...</td></tr>';
+
+        let query = db.collection('vendedores')
+                    .doc(userId)
+                    .collection('produtos');
+
+        // Estratégia para evitar necessidade de índice composto:
+        // 1. Primeiro busca todos os produtos ordenados por nome
+        const snapshot = await query.orderBy('nome').get();
+        let produtos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // 2. Aplica filtros localmente
+        if (grupoSelecionado) {
+            produtos = produtos.filter(p => p.grupo === grupoSelecionado);
+        }
+        
+        if (filtroTexto) {
+            const termo = filtroTexto.toLowerCase();
+            produtos = produtos.filter(p => p.nome.toLowerCase().includes(termo));
+        }
+
+        // Limitar a 100 resultados para performance
+        produtos = produtos.slice(0, 100);
+
+        // Atualizar contador
+        if (contador) {
+            contador.textContent = produtos.length;
+        }
+
+        // Tratar resultados vazios
+        if (produtos.length === 0) {
+            tabela.innerHTML = `
                 <tr>
-                    <td>${produto.nome}</td>
-                    <td>${produto.grupo}</td>
-                    <td>
-                        <button class="btn-editar" data-id="${doc.id}" data-nome="${produto.nome}" data-grupo="${produto.grupo}">Editar</button>
-                        <button class="btn-excluir" data-id="${doc.id}">Excluir</button>
+                    <td colspan="3" class="text-center text-muted py-4">
+                        <i class="bi bi-search fs-4 d-block mb-2"></i>
+                        Nenhum produto encontrado com esses filtros
                     </td>
                 </tr>
             `;
-            tabelaBody.innerHTML += row;
-        });
+            return;
+        }
 
-        // Adiciona os eventos após carregar os produtos
-        adicionarEventos();
+        // Preencher tabela
+        tabela.innerHTML = produtos.map(produto => `
+            <tr>
+                <td>${produto.nome}</td>
+                <td><span class="badge bg-secondary">${produto.grupo}</span></td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-primary btn-editar me-2" 
+                            data-id="${produto.id}" 
+                            data-nome="${produto.nome}" 
+                            data-grupo="${produto.grupo}">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger btn-excluir" 
+                            data-id="${produto.id}">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        configurarEventosTabela();
+
     } catch (error) {
-        console.error('Erro ao carregar produtos: ', error);
+        console.error("Erro ao carregar produtos:", error);
+        tabela.innerHTML = `
+            <tr>
+                <td colspan="3" class="text-center text-danger py-4">
+                    Erro ao carregar produtos: ${error.message}
+                </td>
+            </tr>
+        `;
+        
+        // Mostra o link para criar o índice se for esse o erro
+        if (error.code === 'failed-precondition') {
+            mostrarFeedback(`
+                Erro de índice. 
+                <a href="${error.message.match(/https:\/\/[^\s]+/)[0]}" target="_blank">
+                    Clique aqui para criar o índice necessário
+                </a>
+            `, "danger");
+        }
     }
 }
 
-// Função para adicionar eventos de edição e exclusão
-function adicionarEventos() {
+// Configurar eventos da tabela
+function configurarEventosTabela() {
+    // Botões editar
     document.querySelectorAll('.btn-editar').forEach(btn => {
         btn.addEventListener('click', () => {
-            const id = btn.getAttribute('data-id');
-            const nome = btn.getAttribute('data-nome');
-            const grupo = btn.getAttribute('data-grupo');
-            editarProduto(id, nome, grupo);
+            produtoEmEdicao = {
+                id: btn.dataset.id,
+                nome: btn.dataset.nome,
+                grupo: btn.dataset.grupo
+            };
+            
+            document.getElementById('nomeProduto').value = produtoEmEdicao.nome;
+            document.getElementById('grupoProduto').value = produtoEmEdicao.grupo;
+            document.getElementById('btnCancelarEdicao').style.display = 'inline-block';
+            document.getElementById('btnSubmitForm').innerHTML = '<i class="bi bi-save"></i> Atualizar Produto';
+            
+            // Scroll para o formulário
+            document.getElementById('formCadastro').scrollIntoView({ behavior: 'smooth' });
         });
     });
 
+    // Botões excluir
     document.querySelectorAll('.btn-excluir').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const id = btn.getAttribute('data-id');
-            excluirProduto(id);
-        });
+        btn.addEventListener('click', () => excluirProduto(btn.dataset.id));
     });
 }
 
-// Função para editar um produto
-function editarProduto(id, nome, grupo) {
-    const userId = auth.currentUser.uid; // ID do vendedor logado
-    const produtosRef = db.collection('vendedores').doc(userId).collection('produtos');
+// Excluir produto
+async function excluirProduto(produtoId) {
+    if (!confirm("Tem certeza que deseja excluir este produto?")) return;
 
-    // Oculta o campo de novo grupo e o ícone de "+"
-    document.getElementById('campoNovoGrupo').style.display = 'none';
-    toggleIconeAdicionarGrupo(false); // Oculta o ícone de "+"
-
-    // Mostra o botão de cancelar
-    const btnCancelarEdicao = document.getElementById('btnCancelarEdicao');
-    if (btnCancelarEdicao) {
-        btnCancelarEdicao.style.display = 'inline-block';
+    const user = auth.currentUser;
+    if (!user) {
+        mostrarFeedback("Sessão expirada. Faça login novamente.", "danger");
+        return;
     }
 
-    // Preenche o formulário com os dados do produto
-    document.getElementById('nomeProduto').value = nome;
-    document.getElementById('grupoProduto').value = grupo;
+    try {
+        await db.collection('vendedores')
+            .doc(user.uid)
+            .collection('produtos')
+            .doc(produtoId)
+            .delete();
 
-    // Altera o botão de "Adicionar Produto" para "Salvar Edição"
-    const botao = document.querySelector('#formCadastro button[type="submit"]');
-    botao.textContent = 'Salvar Edição';
-
-    // Remove o evento de submit atual do formulário
-    const formCadastro = document.getElementById('formCadastro');
-    formCadastro.removeEventListener('submit', adicionarProduto);
-
-    // Função para salvar a edição
-    const salvarEdicao = async (e) => {
-        e.preventDefault(); // Impede o envio padrão do formulário
-
-        const nomeProduto = document.getElementById('nomeProduto').value;
-        const grupoProduto = document.getElementById('grupoProduto').value;
-
-        try {
-            // Atualiza o produto no Firestore
-            await produtosRef.doc(id).update({
-                nome: nomeProduto,
-                grupo: grupoProduto
-            });
-            alert('Produto atualizado com sucesso!');
-
-            // Limpa o formulário e restaura o botão
-            formCadastro.reset();
-            botao.textContent = 'Adicionar Produto';
-
-            // Remove o evento de edição e restaura o evento de adição
-            formCadastro.removeEventListener('submit', salvarEdicao);
-            formCadastro.addEventListener('submit', adicionarProduto);
-
-            // Restaura o ícone de "+"
-            toggleIconeAdicionarGrupo(true);
-
-            // Oculta o botão de cancelar
-            if (btnCancelarEdicao) {
-                btnCancelarEdicao.style.display = 'none';
-            }
-
-            // Atualiza a tabela
-            carregarProdutos(userId);
-        } catch (error) {
-            console.error('Erro ao atualizar produto: ', error);
-            alert('Erro ao atualizar produto. Tente novamente.');
-        }
-    };
-
-    // Adiciona o evento de salvar edição
-    formCadastro.addEventListener('submit', salvarEdicao);
+        mostrarFeedback("Produto excluído com sucesso!", "success");
+        await carregarProdutos(user.uid);
+    } catch (error) {
+        console.error("Erro ao excluir produto:", error);
+        mostrarFeedback("Erro ao excluir produto", "danger");
+    }
 }
 
-// Função para cancelar a edição
+// Funções auxiliares
+function toggleCampoNovoGrupo() {
+    const campo = document.getElementById('campoNovoGrupo');
+    if (!campo) return;
+
+    campo.style.display = campo.style.display === 'none' ? 'block' : 'none';
+    if (campo.style.display === 'block') {
+        document.getElementById('novoGrupo').focus();
+    }
+}
+
 function cancelarEdicao() {
-    const formCadastro = document.getElementById('formCadastro');
-    formCadastro.reset(); // Limpa o formulário
-
-    const botao = document.querySelector('#formCadastro button[type="submit"]');
-    botao.textContent = 'Adicionar Produto'; // Restaura o botão
-
-    // Remove o evento de edição e restaura o evento de adição
-    formCadastro.removeEventListener('submit', salvarEdicao);
-    formCadastro.addEventListener('submit', adicionarProduto);
-
-    // Restaura o ícone de "+"
-    toggleIconeAdicionarGrupo(true);
-
-    // Oculta o botão de cancelar
-    const btnCancelarEdicao = document.getElementById('btnCancelarEdicao');
-    if (btnCancelarEdicao) {
-        btnCancelarEdicao.style.display = 'none';
-    }
+    produtoEmEdicao = null;
+    document.getElementById('formCadastro').reset();
+    document.getElementById('btnCancelarEdicao').style.display = 'none';
+    document.getElementById('btnSubmitForm').innerHTML = '<i class="bi bi-save"></i> Salvar Produto';
 }
-
-// Função para excluir um produto
-async function excluirProduto(id) {
-    const userId = auth.currentUser.uid; // ID do vendedor logado
-    const produtosRef = db.collection('vendedores').doc(userId).collection('produtos');
-
-    if (confirm('Tem certeza que deseja excluir este produto?')) {
-        try {
-            await produtosRef.doc(id).delete();
-            alert('Produto excluído com sucesso!');
-            carregarProdutos(userId); // Atualiza a tabela
-        } catch (error) {
-            console.error('Erro ao excluir produto: ', error);
-            alert('Erro ao excluir produto. Tente novamente.');
-        }
-    }
-}
-
-// Função para configurar os eventos após o carregamento da página
-function configurarEventos() {
-    // Adiciona um evento de submit ao formulário
-    const formCadastro = document.getElementById('formCadastro');
-    formCadastro.addEventListener('submit', adicionarProduto);
-
-    // Adiciona um evento ao botão de "+" para exibir/ocultar o campo de novo grupo
-    const btnAdicionarGrupo = document.getElementById('btnAdicionarGrupo');
-    if (btnAdicionarGrupo) {
-        btnAdicionarGrupo.addEventListener('click', toggleCampoNovoGrupo);
-    }
-
-    // Adiciona um evento ao botão de "Salvar" para adicionar o novo grupo
-    const btnSalvarGrupo = document.getElementById('btnSalvarGrupo');
-    if (btnSalvarGrupo) {
-        btnSalvarGrupo.addEventListener('click', adicionarGrupo);
-    }
-
-    // Adiciona um evento ao botão de "Cancelar"
-    const btnCancelarEdicao = document.getElementById('btnCancelarEdicao');
-    if (btnCancelarEdicao) {
-        btnCancelarEdicao.addEventListener('click', cancelarEdicao);
-    }
-}
-
-// Carregar o cabeçalho e o rodapé quando a página for carregada
-document.addEventListener('DOMContentLoaded', function () {
-    carregarHeader();
-    carregarFooter();
-});

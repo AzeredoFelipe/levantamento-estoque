@@ -10,55 +10,120 @@
     <link rel="manifest" href="/js/manifest.json">
 </head>
 <body>
-    <!-- Container do cabeçalho (Carregado via JavaScript) -->
     <div id="header-container"></div>
 
-    <!-- Conteúdo principal -->
-    <div class="container mt-3">
-        <h2>Cadastro de Produtos</h2>
-        <form id="formCadastro">
-            <div class="mb-3">
-                <label for="nomeProduto" class="form-label">Nome do Produto</label>
-                <input type="text" class="form-control" id="nomeProduto" required>
+    <div class="container mt-4">
+        <!-- Card do Formulário de Cadastro -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Cadastrar Novo Produto</h5>
             </div>
-            <div class="mb-3">
-                <label for="grupoProduto" class="form-label">Grupo do Produto</label>
-                <div class="input-group">
-                    <select class="form-select" id="grupoProduto" required>
-                        <option value="">Selecione um grupo</option>
-                    </select>
-                    <button class="btn btn-outline-secondary" type="button" id="btnAdicionarGrupo">
-                        <i class="bi bi-plus"></i> <!-- Ícone de "+" do Bootstrap Icons -->
-                    </button>
-                </div>
-            </div>
-            <!-- Campo para adicionar novo grupo (inicialmente oculto) -->
-            <div class="mb-3" id="campoNovoGrupo" style="display: none;">
-                <label for="novoGrupo" class="form-label">Novo Grupo</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" id="novoGrupo" placeholder="Digite o nome do grupo">
-                    <button class="btn btn-success" type="button" id="btnSalvarGrupo">Salvar</button>
-                </div>
-            </div>
-            <button type="submit" class="btn btn-primary">Adicionar Produto</button>
-            <button type="button" class="btn btn-secondary" id="btnCancelarEdicao" style="display: none;">Cancelar Edição</button>
-        </form>
+            <div class="card-body">
+                <form id="formCadastro">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="nomeProduto" class="form-label">Nome do Produto*</label>
+                            <input type="text" class="form-control" id="nomeProduto" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="grupoProduto" class="form-label">Grupo*</label>
+                            <div class="input-group">
+                                <select class="form-select" id="grupoProduto" required>
+                                    <option value="">Selecione um grupo</option>
+                                </select>
+                                <button class="btn btn-outline-secondary" type="button" id="btnAdicionarGrupo" title="Adicionar novo grupo">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Campo para novo grupo (oculto inicialmente) -->
+                    <div class="row mt-2" id="campoNovoGrupo" style="display: none;">
+                        <div class="col-md-6 offset-md-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="novoGrupo" placeholder="Nome do novo grupo">
+                                <button class="btn btn-success" type="button" id="btnSalvarGrupo">
+                                    <i class="bi bi-check-lg"></i> Salvar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
-        <table id="tabelaProdutos" class="table mt-3">
-            <thead>
-                <tr>
-                    <th>Nome do Produto</th>
-                    <th>Grupo</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Produtos serão adicionados aqui dinamicamente -->
-            </tbody>
-        </table>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-outline-secondary me-2" id="btnCancelarEdicao" style="display: none;">
+                            <i class="bi bi-x-lg"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary" id="btnSubmitForm">
+                            <i class="bi bi-save"></i> Salvar Produto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Card de Busca e Filtros -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-light">
+                <h5 class="mb-0"><i class="bi bi-search me-2"></i>Buscar Produtos</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-8">
+                        <label for="searchProdutos" class="form-label">Pesquisar por nome</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="searchProdutos" placeholder="Digite parte do nome">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="grupoProdutoFilter" class="form-label">Filtrar por grupo</label>
+                        <select class="form-select" id="grupoProdutoFilter">
+                            <option value="">Todos os grupos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <button class="btn btn-outline-secondary w-100" id="btnLimparFiltros" title="Limpar filtros">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card da Lista de Produtos -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Produtos Cadastrados</h5>
+                    <span class="badge bg-primary rounded-pill" id="contadorProdutos">0</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th width="50%">Nome do Produto</th>
+                                <th width="30%">Grupo</th>
+                                <th width="20%" class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaProdutos">
+                            <!-- Resultados serão carregados aqui -->
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">
+                                    <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
+                                    Use os filtros acima para buscar produtos
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Container do rodapé (Carregado via JavaScript) -->
     <div id="footer-container"></div>
 
     <!-- Scripts do Firebase -->

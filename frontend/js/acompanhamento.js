@@ -1,112 +1,134 @@
-// Função para carregar o cabeçalho
-function carregarHeader() {
-  fetch('../html/header.html')
-      .then(response => response.text())
-      .then(data => {
-          document.getElementById('header-container').innerHTML = data;
-      })
-      .catch(error => console.error('Erro ao carregar o cabeçalho:', error));
+// Configuração do Firebase (adicionada no início do arquivo)
+const firebaseConfig = {
+  apiKey: "SUA_API_KEY",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
+  projectId: "SEU_PROJETO",
+  storageBucket: "SEU_PROJETO.appspot.com",
+  messagingSenderId: "SEU_SENDER_ID",
+  appId: "SEU_APP_ID"
+};
+
+// Inicialização do Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
 }
 
-// Função para carregar o rodapé
-function carregarFooter() {
-  fetch('../html/footer.html')
-      .then(response => response.text())
-      .then(data => {
-          document.getElementById('footer-container').innerHTML = data;
-      })
-      .catch(error => console.error('Erro ao carregar o rodapé:', error));
-}
-
-// Carregar o cabeçalho e o rodapé quando a página for carregada
-document.addEventListener('DOMContentLoaded', function () {
-  carregarHeader();
-  carregarFooter();
-});
-
-// Lista de feriados no formato AAAA-MM-DD
-const feriados = [
-  "2024-12-25", // Natal de 2024
-  "2024-12-31", // Folga
-  "2025-01-01", // Ano Novo 2025
-  "2025-04-21", // Tiradentes 2025
-  "2025-05-01", // Dia do Trabalhador 2025
-  "2025-09-07", // Independência do Brasil 2025
-  "2025-10-12", // Nossa Senhora Aparecida 2025
-  "2025-11-02", // Finados 2025
-  "2025-11-15", // Proclamação da República 2025
-  "2025-12-25", // Natal de 2025
-  "2025-07-09", // Revolução Constitucionalista 2025
-  "2025-11-20", // Consciência Negra 2025
-];
-
-// Função para calcular se uma data é feriado
-function ehFeriado(data) {
-  const dataFormatada = data.toISOString().split("T")[0];
-  return feriados.includes(dataFormatada);
-}
-
-// Função para calcular dias úteis do mês atual
-function calcularDiasUteis() {
-  const hoje = new Date();
-  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-
-  let diasUteis = 0;
-  let diasTrabalhados = 0;
-
-  for (let dia = new Date(inicioMes); dia <= fimMes; dia.setDate(dia.getDate() + 1)) {
-      const diaSemana = dia.getDay();
-      if (diaSemana !== 0 && diaSemana !== 6 && !ehFeriado(dia)) {
-          diasUteis++;
-          if (dia < hoje.setHours(0, 0, 0, 0)) {
-              diasTrabalhados++;
-          }
-      }
-  }
-
-  const diasFaltantes = diasUteis - diasTrabalhados;
-
-  document.getElementById("diasUteis").value = diasUteis;
-  document.getElementById("diasTrabalhados").value = diasTrabalhados;
-  document.getElementById("diasFaltantes").value = diasFaltantes;
-}
-
-// Função para atualizar os campos dinamicamente
-function atualizarCamposDias() {
-  const diasUteisInput = document.getElementById("diasUteis");
-  const diasTrabalhadosInput = document.getElementById("diasTrabalhados");
-  const diasFaltantesInput = document.getElementById("diasFaltantes");
-
-  const diasUteis = parseFloat(diasUteisInput.value);
-  const diasTrabalhados = parseFloat(diasTrabalhadosInput.value);
-  const diasFaltantes = parseFloat(diasFaltantesInput.value);
-
-  if (diasUteisInput.value === "" || diasTrabalhadosInput.value === "" || diasFaltantesInput.value === "") {
+// Verificação de autenticação melhorada
+firebase.auth().onAuthStateChanged((user) => {
+  if (!user) {
+      window.location.href = "/index.html";
       return;
   }
+  
+  // Carrega os componentes e cálculos após autenticação
+  carregarComponentes();
+  inicializarCalculos();
+});
 
-  if (!isNaN(diasUteis) && !isNaN(diasTrabalhados)) {
-      diasFaltantesInput.value = diasUteis - diasTrabalhados;
-  } else if (!isNaN(diasUteis) && !isNaN(diasFaltantes)) {
-      diasTrabalhadosInput.value = diasUteis - diasFaltantes;
-  } else if (!isNaN(diasTrabalhados) && !isNaN(diasFaltantes)) {
-      diasUteisInput.value = diasTrabalhados + diasFaltantes;
+// Função para carregar componentes
+function carregarComponentes() {
+  carregarHeader();
+  carregarFooter();
+}
+
+// Função para carregar o cabeçalho (com tratamento de erro melhorado)
+async function carregarHeader() {
+  try {
+      const response = await fetch('../html/header.html');
+      if (!response.ok) throw new Error('Falha ao carregar cabeçalho');
+      const data = await response.text();
+      document.getElementById('header-container').innerHTML = data;
+  } catch (error) {
+      console.error('Erro ao carregar cabeçalho:', error);
+      // Pode adicionar um fallback UI aqui
   }
 }
 
-// Função para calcular Mix Faltante
+// Função para carregar o rodapé (com tratamento de erro melhorado)
+async function carregarFooter() {
+  try {
+      const response = await fetch('../html/footer.html');
+      if (!response.ok) throw new Error('Falha ao carregar rodapé');
+      const data = await response.text();
+      document.getElementById('footer-container').innerHTML = data;
+  } catch (error) {
+      console.error('Erro ao carregar rodapé:', error);
+  }
+}
+
+// Lista de feriados (agora como constante fora do escopo global)
+const FERIADOS = new Set([
+  "2024-12-25", "2024-12-31", "2025-01-01",
+  "2025-04-21", "2025-05-01", "2025-09-07",
+  "2025-10-12", "2025-11-02", "2025-11-15",
+  "2025-12-25", "2025-07-09", "2025-11-20"
+]);
+
+// Função para verificar feriados (mais eficiente)
+function ehFeriado(data) {
+  return FERIADOS.has(data.toISOString().split("T")[0]);
+}
+
+// Função para calcular dias úteis (com validação adicional)
+function calcularDiasUteis() {
+  try {
+      const hoje = new Date();
+      const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+      const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+
+      let diasUteis = 0;
+      let diasTrabalhados = 0;
+      const hojeSemHora = new Date(hoje.setHours(0, 0, 0, 0));
+
+      for (let dia = new Date(inicioMes); dia <= fimMes; dia.setDate(dia.getDate() + 1)) {
+          const diaSemana = dia.getDay();
+          if (diaSemana !== 0 && diaSemana !== 6 && !ehFeriado(dia)) {
+              diasUteis++;
+              if (dia < hojeSemHora) {
+                  diasTrabalhados++;
+              }
+          }
+      }
+
+      document.getElementById("diasUteis").value = diasUteis;
+      document.getElementById("diasTrabalhados").value = diasTrabalhados;
+      document.getElementById("diasFaltantes").value = diasUteis - diasTrabalhados;
+  } catch (error) {
+      console.error("Erro ao calcular dias úteis:", error);
+  }
+}
+
+// Funções de cálculo (com validação de entrada)
+function atualizarCamposDias() {
+  const getValue = (id) => {
+      const el = document.getElementById(id);
+      return el ? parseFloat(el.value) || 0 : 0;
+  };
+
+  const diasUteis = getValue("diasUteis");
+  const diasTrabalhados = getValue("diasTrabalhados");
+  const diasFaltantes = getValue("diasFaltantes");
+
+  if (!diasUteis && !diasTrabalhados && !diasFaltantes) return;
+
+  // Lógica de cálculo mais segura
+  if (diasUteis && diasTrabalhados) {
+      document.getElementById("diasFaltantes").value = diasUteis - diasTrabalhados;
+  } else if (diasUteis && diasFaltantes) {
+      document.getElementById("diasTrabalhados").value = diasUteis - diasFaltantes;
+  } else if (diasTrabalhados && diasFaltantes) {
+      document.getElementById("diasUteis").value = diasTrabalhados + diasFaltantes;
+  }
+}
+
 function calcularMixFaltante() {
+  const mixBase = document.getElementById("mix25").checked ? 25 : 30;
+  const mixMedio = parseFloat(document.getElementById("mixMedio").value) || 0;
   const diasUteis = parseFloat(document.getElementById("diasUteis").value) || 0;
   const diasTrabalhados = parseFloat(document.getElementById("diasTrabalhados").value) || 0;
   const diasFaltantes = parseFloat(document.getElementById("diasFaltantes").value) || 0;
-  const mixMedio = parseFloat(document.getElementById("mixMedio").value);
 
-  const mix25Selecionado = document.getElementById("mix25").checked;
-  const mix30Selecionado = document.getElementById("mix30").checked;
-  const mixBase = mix25Selecionado ? 25 : 30;
-
-  if (!isNaN(mixMedio) && diasFaltantes > 0) {
+  if (mixMedio && diasFaltantes > 0) {
       const mixFaltante = ((diasUteis * mixBase) - (diasTrabalhados * mixMedio)) / diasFaltantes;
       document.getElementById("mixFaltante").value = mixFaltante.toFixed(2);
   } else {
@@ -114,26 +136,28 @@ function calcularMixFaltante() {
   }
 }
 
-// Inicializar o cálculo ao carregar a página
-window.onload = function () {
+// Inicialização dos cálculos (com delegação de eventos)
+function inicializarCalculos() {
   calcularDiasUteis();
-
-  document.getElementById("diasUteis").addEventListener("input", () => {
-      atualizarCamposDias();
-      calcularMixFaltante();
+  
+  const campos = ["diasUteis", "diasTrabalhados", "diasFaltantes", "mixMedio"];
+  campos.forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+          element.addEventListener("input", () => {
+              atualizarCamposDias();
+              calcularMixFaltante();
+          });
+      }
   });
 
-  document.getElementById("diasTrabalhados").addEventListener("input", () => {
-      atualizarCamposDias();
-      calcularMixFaltante();
-  });
+  document.getElementById("mix25")?.addEventListener("change", calcularMixFaltante);
+  document.getElementById("mix30")?.addEventListener("change", calcularMixFaltante);
+}
 
-  document.getElementById("diasFaltantes").addEventListener("input", () => {
-      atualizarCamposDias();
-      calcularMixFaltante();
-  });
-
-  document.getElementById("mixMedio").addEventListener("input", calcularMixFaltante);
-  document.getElementById("mix25").addEventListener("change", calcularMixFaltante);
-  document.getElementById("mix30").addEventListener("change", calcularMixFaltante);
-};
+// Carregamento inicial seguro
+document.addEventListener('DOMContentLoaded', () => {
+  if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+  }
+});
