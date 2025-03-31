@@ -1,15 +1,19 @@
+if (process.env.NODE_ENV !== 'production') {
+    require('dotenv').config();
+}
+
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const admin = require('firebase-admin'); // ÚNICA declaração do admin
+const admin = require('firebase-admin'); // ÚNICA declaração
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuração do Firebase (versão simplificada e unificada)
+// Configuração unificada do Firebase
 if (admin.apps.length === 0) {
   try {
-    const firebaseConfig = {
+    const config = {
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
@@ -18,10 +22,15 @@ if (admin.apps.length === 0) {
       databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
     };
 
-    admin.initializeApp(firebaseConfig);
+    // Configuração local apenas se não estiver em produção
+    if (process.env.NODE_ENV !== 'production' && require.resolve('./serviceAccountKey.json')) {
+      config.credential = admin.credential.cert(require('./serviceAccountKey.json'));
+    }
+
+    admin.initializeApp(config);
     console.log('Firebase Admin inicializado com sucesso');
   } catch (error) {
-    console.error('Erro ao inicializar Firebase Admin:', error);
+    console.error('Erro ao inicializar Firebase:', error);
     process.exit(1);
   }
 }
@@ -45,45 +54,58 @@ const autenticarUsuario = async (req, res, next) => {
   }
 };
 
+// Rota de teste do Firebase
+app.get('/test-firebase', async (req, res) => {
+    try {
+      // Teste simples de autenticação
+      const userRecords = await admin.auth().listUsers(1);
+      
+      res.json({
+        status: 'success',
+        firebase: 'working',
+        firstUser: userRecords.users[0]?.email || 'none'
+      });
+    } catch (error) {
+      res.status(500).json({
+        status: 'error',
+        message: error.message,
+        details: error.stack
+      });
+    }
+  });
+
 // Rotas
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// Rotas API protegidas
+// Rotas API
 app.use('/api', autenticarUsuario, require('./routes/estoqueRoutes'));
 
-// Rotas para páginas HTML
-const htmlPages = [
+// Rotas HTML
+[
   'levantamento',
   'acompanhamento',
   'cadastro',
   'cadastroCliente',
   'cadastroVendedor'
-];
-
-htmlPages.forEach(page => {
-  const filePath = path.join(__dirname, `../frontend/html/${page}.html`);
-  
+].forEach(page => {
   app.get(`/${page}`, (req, res) => {
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        console.error(`Erro ao carregar ${page}.html:`, err);
-        res.status(404).send('Página não encontrada');
-      }
+    res.sendFile(path.join(__dirname, `../frontend/html/${page}.html`), err => {
+      err && res.status(404).send('Página não encontrada');
     });
   });
 });
 
-// Rota de fallback
+// Rota fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// Middleware de erro
+// Error handler
 app.use((err, req, res, next) => {
-  console.error('Erro no servidor:', err);
-  res.status(500).send('Erro interno do servidor');
+  console.error('Erro:', err);
+  res.status(500).send('Erro interno');
 });
 
 // Iniciar servidor
