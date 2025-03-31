@@ -1,49 +1,28 @@
-const admin = require('firebase-admin');
-
-// Configuração segura para Vercel e local
-if (admin.apps.length === 0) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-    }),
-    databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
-  });
-  console.log('Firebase Admin inicializado com sucesso');
-}
-
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const admin = require('firebase-admin');
-const app = express();
+const admin = require('firebase-admin'); // ÚNICA declaração do admin
 
-// Configuração da porta
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Inicialização segura do Firebase para Vercel e local
+// Configuração do Firebase (versão simplificada e unificada)
 if (admin.apps.length === 0) {
   try {
-    if (process.env.NODE_ENV === 'production') {
-      // Configuração para produção no Vercel
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-        })
-      });
-    } else {
-      // Configuração para desenvolvimento local
-      const serviceAccount = require('./serviceAccountKey.json');
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-      });
-    }
+    const firebaseConfig = {
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      }),
+      databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
+    };
+
+    admin.initializeApp(firebaseConfig);
     console.log('Firebase Admin inicializado com sucesso');
   } catch (error) {
     console.error('Erro ao inicializar Firebase Admin:', error);
-    process.exit(1); // Encerra o servidor se o Firebase falhar
+    process.exit(1);
   }
 }
 
@@ -108,7 +87,7 @@ app.use((err, req, res, next) => {
 });
 
 // Iniciar servidor
-const server = app.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
 
