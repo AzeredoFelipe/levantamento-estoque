@@ -16,70 +16,33 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Sistema de feedback melhorado
+// Variáveis de controle
+let authStateListener = null;
+let isProcessingSignUp = false;
+let btnOriginalText = '';
+
+// Função para mostrar feedback
 function mostrarFeedback(mensagem, tipo = "sucesso") {
-    const feedbackElement = document.getElementById('feedback-mensagem') || document.getElementById('mensagem');
+    const feedbackElement = document.getElementById('feedback-mensagem');
     if (feedbackElement) {
         feedbackElement.textContent = mensagem;
-        feedbackElement.className = `feedback-${tipo}`;
+        feedbackElement.className = `alert alert-${tipo === 'sucesso' ? 'success' : 'danger'}`;
         feedbackElement.style.display = 'block';
         
-        // Oculta após 5 segundos
-        setTimeout(() => {
-            feedbackElement.style.display = 'none';
-        }, 5000);
+        // Oculta após 5 segundos para mensagens de sucesso
+        if (tipo === 'sucesso') {
+            setTimeout(() => {
+                feedbackElement.style.display = 'none';
+            }, 5000);
+        }
     }
     
-    // Fallback para console
+    // Log no console
     tipo === 'erro' ? console.error(mensagem) : console.log(mensagem);
 }
 
-// Carregar componentes da página
-async function carregarComponentes() {
-    try {
-        await Promise.all([carregarHeader(), carregarFooter()]);
-    } catch (error) {
-        console.error("Erro ao carregar componentes:", error);
-        mostrarFeedback("Erro ao carregar componentes da página", "erro");
-    }
-}
-
-// Função para carregar o cabeçalho
-async function carregarHeader() {
-    try {
-        const headerContainer = document.getElementById('header-container');
-        if (!headerContainer) return;
-
-        const response = await fetch('/html/header.html');
-        if (!response.ok) throw new Error('Erro ao carregar cabeçalho');
-        
-        const html = await response.text();
-        headerContainer.innerHTML = html;
-    } catch (error) {
-        console.error("Erro no carregamento do cabeçalho:", error);
-        throw error;
-    }
-}
-
-// Função para carregar o rodapé
-async function carregarFooter() {
-    try {
-        const footerContainer = document.getElementById('footer-container');
-        if (!footerContainer) return;
-
-        const response = await fetch('/html/footer.html');
-        if (!response.ok) throw new Error('Erro ao carregar rodapé');
-        
-        const html = await response.text();
-        footerContainer.innerHTML = html;
-    } catch (error) {
-        console.error("Erro no carregamento do rodapé:", error);
-        throw error;
-    }
-}
-
 // Função para validar o formulário
-function validarFormulario(email, senha) {
+function validarFormulario(email, senha, confirmarSenha) {
     const erros = [];
     
     // Validação de email
@@ -92,36 +55,38 @@ function validarFormulario(email, senha) {
         erros.push("Senha deve ter pelo menos 6 caracteres");
     }
     
+    // Validação de confirmação de senha
+    if (senha !== confirmarSenha) {
+        erros.push("As senhas não coincidem");
+    }
+    
     return erros;
 }
 
 // Função para cadastrar um novo vendedor
 async function cadastrarVendedor(event) {
     event.preventDefault();
+    isProcessingSignUp = true;
 
-    const email = document.getElementById('email')?.value.trim() || '';
-    const senha = document.getElementById('senha')?.value.trim() || '';
-    const confirmarSenha = document.getElementById('confirmarSenha')?.value.trim() || '';
+    const email = document.getElementById('email').value.trim();
+    const senha = document.getElementById('senha').value.trim();
+    const confirmarSenha = document.getElementById('confirmarSenha').value.trim();
 
     // Validações
-    const erros = validarFormulario(email, senha);
-    
-    if (senha !== confirmarSenha) {
-        erros.push("As senhas não coincidem");
-    }
-
+    const erros = validarFormulario(email, senha, confirmarSenha);
     if (erros.length > 0) {
         mostrarFeedback(erros.join(". "), "erro");
+        isProcessingSignUp = false;
         return;
     }
 
-    try {
-        // Mostra estado de carregamento
-        const btnSubmit = document.querySelector('#cadastroForm button[type="submit"]');
-        const btnOriginalText = btnSubmit.textContent;
-        btnSubmit.disabled = true;
-        btnSubmit.textContent = "Cadastrando...";
+    // Configura estado de carregamento
+    const btnSubmit = document.querySelector('#cadastroForm button[type="submit"]');
+    btnOriginalText = btnSubmit.textContent;
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = "Cadastrando...";
 
+    try {
         // Cria o usuário no Firebase Auth
         const userCredential = await auth.createUserWithEmailAndPassword(email, senha);
         const userId = userCredential.user.uid;
@@ -130,18 +95,26 @@ async function cadastrarVendedor(event) {
         await db.collection('vendedores').doc(userId).set({
             email: email,
             criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
-            ultimoAcesso: firebase.firestore.FieldValue.serverTimestamp(),
-            nivelAcesso: "vendedor" // Padrão de nível de acesso
+            nivelAcesso: "vendedor"
         });
 
-        mostrarFeedback("Cadastro realizado com sucesso! Redirecionando...");
+        mostrarFeedback("Cadastro realizado com sucesso! Redirecionando...", "sucesso");
+        
+        // Remove a flag de cadastro do localStorage
+        localStorage.removeItem('isSignUpFlow');
         
         // Redireciona após breve delay
         setTimeout(() => {
-            window.location.href = "/";
+            window.location.href = "/html/levantamento.html";
         }, 2000);
     } catch (error) {
-        console.error("Erro no cadastro:", error);
+        isProcessingSignUp = false;
+        
+        // Restaura o botão
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = btnOriginalText;
+        }
         
         // Mapeia erros comuns para mensagens amigáveis
         let mensagemErro = "Erro ao cadastrar. Tente novamente.";
@@ -158,45 +131,42 @@ async function cadastrarVendedor(event) {
         }
         
         mostrarFeedback(mensagemErro, "erro");
-        
-        // Restaura o botão
-        const btnSubmit = document.querySelector('#cadastroForm button[type="submit"]');
-        if (btnSubmit) {
-            btnSubmit.disabled = false;
-            btnSubmit.textContent = btnOriginalText;
-        }
     }
 }
 
 // Configuração inicial da página
 document.addEventListener('DOMContentLoaded', () => {
-    // Verifica se já está autenticado (impede acesso à página de cadastro se logado)
-    auth.onAuthStateChanged((user) => {
-        if (user) {
+    // Verifica se veio do fluxo de cadastro
+    const isSignUpFlow = localStorage.getItem('isSignUpFlow') === 'true';
+    
+    // Configura o listener de autenticação
+    authStateListener = auth.onAuthStateChanged((user) => {
+        if (isProcessingSignUp) return;
+        
+        if (user && !isSignUpFlow) {
+            // Redireciona se já estiver logado e não for fluxo de cadastro
             window.location.href = "/html/levantamento.html";
-        } else {
-            carregarComponentes();
-            
-            // Configura o formulário
-            const cadastroForm = document.getElementById('cadastroForm');
-            if (cadastroForm) {
-                cadastroForm.addEventListener('submit', cadastrarVendedor);
-                
-                // Adiciona validação em tempo real
-                cadastroForm.querySelectorAll('input').forEach(input => {
-                    input.addEventListener('input', () => {
-                        const email = document.getElementById('email')?.value.trim() || '';
-                        const senha = document.getElementById('senha')?.value.trim() || '';
-                        const erros = validarFormulario(email, senha);
-                        
-                        if (erros.length > 0) {
-                            input.classList.add('input-invalido');
-                        } else {
-                            input.classList.remove('input-invalido');
-                        }
-                    });
-                });
-            }
+        } else if (!user && !isSignUpFlow) {
+            // Redireciona para login se não estiver logado e não for fluxo de cadastro
+            window.location.href = "/";
         }
     });
+
+    // Configura o formulário
+    const cadastroForm = document.getElementById('cadastroForm');
+    if (cadastroForm) {
+        cadastroForm.addEventListener('submit', cadastrarVendedor);
+        
+        // Validação em tempo real
+        cadastroForm.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => {
+                const email = document.getElementById('email').value.trim();
+                const senha = document.getElementById('senha').value.trim();
+                const confirmarSenha = document.getElementById('confirmarSenha').value.trim();
+                const erros = validarFormulario(email, senha, confirmarSenha);
+                
+                input.classList.toggle('is-invalid', erros.length > 0);
+            });
+        });
+    }
 });
