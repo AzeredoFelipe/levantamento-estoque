@@ -3,135 +3,97 @@ const firebaseConfig = {
     apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
     authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
     projectId: "levantamentoestoqueweb-d71cb",
-    storageBucket: "levantamentoestoqueweb-d71cb.firebasestorage.app",
+    storageBucket: "levantamentoestoqueweb-d71cb.appspot.com",
     messagingSenderId: "743543905338",
     appId: "1:743543905338:web:189cabbd4d9297effea903",
     measurementId: "G-3ETPR2T1PM"
 };
 
-// Inicialização segura do Firebase
+// Inicialização do Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Sistema de feedback
-function mostrarFeedback(mensagem, tipo = "sucesso") {
-    const feedbackElement = document.getElementById('feedback-mensagem');
-    if (feedbackElement) {
-        feedbackElement.textContent = mensagem;
-        feedbackElement.className = `alert alert-${tipo === 'sucesso' ? 'success' : 'danger'}`;
-        feedbackElement.style.display = 'block';
-        
-        setTimeout(() => {
-            feedbackElement.style.display = 'none';
-        }, 5000);
-    }
-}
-
-// Variáveis globais
-let produtosSelecionados = [];
+// Estado global
+let clienteSelecionado = null;
+let produtosSalvos = [];
+let todosProdutos = [];
+let todosGrupos = [];
 
 // Elementos da interface
-const elements = {
-    clienteSelect: document.getElementById('cliente'),
-    grupoSelect: document.getElementById('grupoProduto'),
-    searchInput: document.getElementById('searchInput'),
+const elementos = {
+    selectCliente: document.getElementById('selectCliente'),
+    filtroGrupo: document.getElementById('filtroGrupo'),
+    filtroNome: document.getElementById('filtroNome'),
     tabelaProdutos: document.getElementById('tabelaProdutos'),
-    btnRelatorio: document.getElementById('btnRelatorio'),
-    btnCompartilhar: document.getElementById('btnCompartilhar'),
-    btnLimpar: document.getElementById('btnLimpar'),
-    painelRelatorio: document.getElementById('painelRelatorio'),
-    btnFecharRelatorio: document.getElementById('btnFecharRelatorio'),
-    relatorioCliente: document.getElementById('relatorioCliente'),
-    relatorioData: document.getElementById('relatorioData'),
-    relatorioItens: document.getElementById('relatorioItens'),
-    btnImprimirRelatorio: document.getElementById('btnImprimirRelatorio'),
+    btnIniciarLevantamento: document.getElementById('btnIniciarLevantamento'),
     btnFinalizarLevantamento: document.getElementById('btnFinalizarLevantamento'),
-    painelHistorico: document.getElementById('painelHistorico'),
-    btnFecharHistorico: document.getElementById('btnFecharHistorico'),
-    tabelaHistorico: document.getElementById('tabelaHistorico')
+    etapaCliente: document.getElementById('etapaCliente'),
+    etapaProdutos: document.getElementById('etapaProdutos'),
+    contadorProdutos: document.getElementById('contadorProdutos'),
+    btnEnviarWhatsApp: document.getElementById('btnEnviarWhatsApp'),
+    btnSalvarLevantamento: document.getElementById('btnSalvarLevantamento'),
+    modalRevisao: new bootstrap.Modal(document.getElementById('modalRevisao'))
 };
 
-// Inicialização da aplicação
+// Inicialização
 document.addEventListener('DOMContentLoaded', () => {
-    verificarAutenticacao();
+    auth.onAuthStateChanged(async (user) => {
+        if (user) {
+            await carregarComponentes();
+            await carregarClientes();
+            await carregarGrupos();
+            configurarEventos();
+        } else {
+            window.location.href = "/index.html";
+        }
+    });
 });
 
-// Funções principais
-async function verificarAutenticacao() {
-    const userId = localStorage.getItem('userId');
-    if (!userId) {
-        window.location.href = "/index.html";
-        return;
-    }
-    
-    try {
-        await Promise.all([
-            carregarComponentes(),
-            carregarDados(userId)
-        ]);
-        configurarEventos();
-    } catch (error) {
-        console.error("Erro na inicialização:", error);
-        mostrarFeedback("Erro ao carregar a página", "erro");
-    }
-}
-
+// Funções auxiliares
 async function carregarComponentes() {
     try {
-        await Promise.all([
-            carregarHeader(),
-            carregarFooter()
+        const [header, footer] = await Promise.all([
+            fetch('/html/header.html').then(r => r.text()),
+            fetch('/html/footer.html').then(r => r.text())
         ]);
+        
+        document.getElementById('header-container').innerHTML = header;
+        document.getElementById('footer-container').innerHTML = footer;
     } catch (error) {
         console.error("Erro ao carregar componentes:", error);
-        throw error;
     }
 }
 
-async function carregarHeader() {
-    try {
-        const response = await fetch('../html/header.html');
-        if (!response.ok) throw new Error('Erro ao carregar cabeçalho');
-        document.getElementById('header-container').innerHTML = await response.text();
-    } catch (error) {
-        console.error("Erro no carregamento do cabeçalho:", error);
-        throw error;
-    }
+function mostrarFeedback(mensagem, tipo = "success") {
+    const feedback = document.createElement('div');
+    feedback.className = `alert alert-${tipo} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    feedback.style.zIndex = '1000';
+    feedback.innerHTML = `
+        ${mensagem}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => feedback.remove(), 5000);
 }
 
-async function carregarFooter() {
-    try {
-        const response = await fetch('../html/footer.html');
-        if (!response.ok) throw new Error('Erro ao carregar rodapé');
-        document.getElementById('footer-container').innerHTML = await response.text();
-    } catch (error) {
-        console.error("Erro no carregamento do rodapé:", error);
-        throw error;
-    }
+function atualizarContador() {
+    const count = produtosSalvos.filter(p => p.sugestao > 0).length;
+    elementos.contadorProdutos.textContent = `${count} ${count === 1 ? 'item salvo' : 'itens salvos'}`;
+    elementos.contadorProdutos.classList.toggle('d-none', count === 0);
 }
 
-async function carregarDados(userId) {
+// Funções de carregamento de dados
+async function carregarClientes() {
     try {
-        await Promise.all([
-            carregarClientes(userId),
-            carregarGrupos(userId),
-            carregarProdutos(userId),
-            carregarHistorico(userId)
-        ]);
-    } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-        mostrarFeedback("Erro ao carregar dados", "erro");
-        throw error;
-    }
-}
-
-async function carregarClientes(userId) {
-    try {
-        elements.clienteSelect.innerHTML = '<option value="">Selecione um cliente</option>';
-        const snapshot = await db.collection('vendedores').doc(userId).collection('clientes')
+        elementos.selectCliente.innerHTML = '<option value="">Selecione um cliente</option>';
+        
+        const snapshot = await db.collection('vendedores')
+            .doc(auth.currentUser.uid)
+            .collection('clientes')
             .orderBy('nome')
             .get();
             
@@ -139,289 +101,398 @@ async function carregarClientes(userId) {
             const option = document.createElement('option');
             option.value = doc.id;
             option.textContent = doc.data().nome;
-            elements.clienteSelect.appendChild(option);
+            elementos.selectCliente.appendChild(option);
         });
     } catch (error) {
         console.error("Erro ao carregar clientes:", error);
-        mostrarFeedback("Erro ao carregar lista de clientes", "erro");
-        throw error;
+        mostrarFeedback("Erro ao carregar clientes", "danger");
     }
 }
 
-async function carregarGrupos(userId) {
+async function carregarGrupos() {
     try {
-        elements.grupoSelect.innerHTML = '<option value="">Todos os produtos</option>';
-        const snapshot = await db.collection('vendedores').doc(userId).collection('grupos')
+        elementos.filtroGrupo.innerHTML = '<option value="">Selecione um grupo</option>';
+        
+        const snapshot = await db.collection('vendedores')
+            .doc(auth.currentUser.uid)
+            .collection('grupos')
             .orderBy('nome')
             .get();
             
-        snapshot.forEach(doc => {
+        todosGrupos = snapshot.docs.map(doc => ({
+            id: doc.id,
+            nome: doc.data().nome
+        }));
+        
+        todosGrupos.forEach(grupo => {
             const option = document.createElement('option');
-            option.value = doc.data().nome;
-            option.textContent = doc.data().nome;
-            elements.grupoSelect.appendChild(option);
+            option.value = grupo.nome;
+            option.textContent = grupo.nome;
+            elementos.filtroGrupo.appendChild(option);
         });
+        
+        // Adiciona opção para todos os grupos
+        const optionTodos = document.createElement('option');
+        optionTodos.value = "todos";
+        optionTodos.textContent = "Todos os grupos";
+        elementos.filtroGrupo.appendChild(optionTodos);
     } catch (error) {
         console.error("Erro ao carregar grupos:", error);
-        mostrarFeedback("Erro ao carregar grupos de produtos", "erro");
-        throw error;
+        mostrarFeedback("Erro ao carregar grupos", "danger");
     }
 }
 
-async function carregarProdutos(userId) {
+async function carregarProdutos() {
     try {
-        elements.tabelaProdutos.innerHTML = '<tr><td colspan="4" class="text-center py-4">Carregando produtos...</td></tr>';
-        
-        const snapshot = await db.collection('vendedores').doc(userId).collection('produtos')
+        if (!auth.currentUser) return;
+
+        // Tenta carregar da coleção 'produtos' primeiro
+        let snapshot = await db.collection('vendedores')
+            .doc(auth.currentUser.uid)
+            .collection('produtos')
             .orderBy('nome')
             .get();
         
+        // Se não encontrar nada, tenta da coleção 'itens'
         if (snapshot.empty) {
-            elements.tabelaProdutos.innerHTML = '<tr><td colspan="4" class="text-center py-4">Nenhum produto cadastrado</td></tr>';
-            return;
+            snapshot = await db.collection('vendedores')
+                .doc(auth.currentUser.uid)
+                .collection('itens')
+                .orderBy('nome')
+                .get();
         }
-
-        let html = '';
-        snapshot.forEach(doc => {
-            const produto = doc.data();
-            html += `
-                <tr data-id="${doc.id}" data-grupo="${produto.grupo || ''}">
-                    <td>${produto.nome}</td>
-                    <td><input type="number" min="0" value="${produto.estoque || 0}" class="form-control form-control-sm estoque"></td>
-                    <td><input type="number" min="0" value="${produto.sugestao || 0}" class="form-control form-control-sm sugestao"></td>
-                    <td class="text-center">
-                        <button class="btn btn-sm btn-primary btn-adicionar" data-id="${doc.id}">
-                            <i class="bi bi-plus-circle"></i> Adicionar
-                        </button>
-                    </td>
-                </tr>
-            `;
+            
+        todosProdutos = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                nome: data.nome || data.Nome || 'Sem nome',
+                grupo: data.grupo || data.Grupo || 'Sem grupo',
+                quantidade: data.quantidade || data.Quantidade || data.estoque || data.Estoque || 0,
+                preco: data.preco || data.Preco || 0
+            };
         });
-
-        elements.tabelaProdutos.innerHTML = html;
-        adicionarEventosProdutos();
+        
+        if (todosProdutos.length === 0) {
+            mostrarFeedback("Nenhum produto cadastrado encontrado", "warning");
+        }
+        
+        if (elementos.filtroGrupo.value) {
+            filtrarProdutos();
+        }
     } catch (error) {
         console.error("Erro ao carregar produtos:", error);
-        elements.tabelaProdutos.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-danger">Erro ao carregar produtos</td></tr>';
-        mostrarFeedback("Erro ao carregar produtos", "erro");
-        throw error;
+        mostrarFeedback("Erro ao carregar produtos. Verifique o console.", "danger");
     }
-}
-
-async function carregarHistorico(userId) {
-    try {
-        if (!elements.tabelaHistorico) return;
-        
-        elements.tabelaHistorico.innerHTML = '<tr><td colspan="4">Carregando histórico...</td></tr>';
-        
-        const snapshot = await db.collection('vendedores').doc(userId).collection('levantamentos')
-            .orderBy('data', 'desc')
-            .limit(10)
-            .get();
-        
-        if (snapshot.empty) {
-            elements.tabelaHistorico.innerHTML = '<tr><td colspan="4">Nenhum histórico encontrado</td></tr>';
-            return;
-        }
-
-        let html = '';
-        snapshot.forEach(doc => {
-            const levantamento = doc.data();
-            html += `
-                <tr>
-                    <td>${new Date(levantamento.data?.toDate()).toLocaleDateString()}</td>
-                    <td>${levantamento.clienteNome}</td>
-                    <td>${levantamento.produtos?.length || 0}</td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-primary btn-ver-levantamento" data-id="${doc.id}">
-                            <i class="bi bi-eye"></i> Ver
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-
-        elements.tabelaHistorico.innerHTML = html;
-    } catch (error) {
-        console.error("Erro ao carregar histórico:", error);
-        if (elements.tabelaHistorico) {
-            elements.tabelaHistorico.innerHTML = '<tr><td colspan="4">Erro ao carregar histórico</td></tr>';
-        }
-    }
-}
-
-// Funções de eventos
-function configurarEventos() {
-    // Filtros
-    elements.grupoSelect?.addEventListener('change', filtrarProdutos);
-    elements.searchInput?.addEventListener('input', filtrarProdutos);
-    
-    // Botões principais
-    elements.btnRelatorio?.addEventListener('click', mostrarRelatorio);
-    elements.btnFecharRelatorio?.addEventListener('click', () => elements.painelRelatorio?.classList.add('d-none'));
-    elements.btnCompartilhar?.addEventListener('click', compartilharWhatsApp);
-    elements.btnLimpar?.addEventListener('click', limparLevantamento);
-    elements.btnImprimirRelatorio?.addEventListener('click', imprimirRelatorio);
-    elements.btnFinalizarLevantamento?.addEventListener('click', finalizarLevantamento);
-    elements.btnFecharHistorico?.addEventListener('click', () => elements.painelHistorico?.classList.add('d-none'));
-}
-
-function adicionarEventosProdutos() {
-    document.querySelectorAll('.btn-adicionar').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const row = this.closest('tr');
-            const produto = {
-                id: this.dataset.id,
-                nome: row.querySelector('td').textContent,
-                estoque: row.querySelector('.estoque').value,
-                sugestao: row.querySelector('.sugestao').value
-            };
-            adicionarProduto(produto, this);
-        });
-    });
 }
 
 function filtrarProdutos() {
-    const filtroGrupo = elements.grupoSelect?.value || '';
-    const filtroTexto = elements.searchInput?.value.toLowerCase() || '';
-    
-    document.querySelectorAll("#tabelaProdutos tr").forEach(row => {
-        if (!row.dataset.id) return;
-        
-        const grupo = row.dataset.grupo || '';
-        const nome = row.querySelector('td').textContent.toLowerCase();
-        
-        const mostraGrupo = !filtroGrupo || grupo === filtroGrupo;
-        const mostraTexto = !filtroTexto || nome.includes(filtroTexto);
-        
-        row.style.display = mostraGrupo && mostraTexto ? '' : 'none';
-    });
-}
-
-// Funções de negócio
-function adicionarProduto(produto, botao) {
-    const index = produtosSelecionados.findIndex(p => p.id === produto.id);
-    
-    if (index >= 0) {
-        produtosSelecionados[index] = produto;
-        botao.innerHTML = '<i class="bi bi-check-circle"></i> Atualizado';
-    } else {
-        produtosSelecionados.push(produto);
-        botao.innerHTML = '<i class="bi bi-check-circle-fill"></i> Adicionado';
-        botao.classList.replace('btn-primary', 'btn-success');
-    }
-    
-    botao.disabled = true;
-    setTimeout(() => {
-        botao.disabled = false;
-        botao.innerHTML = '<i class="bi bi-plus-circle"></i> Adicionar';
-        if (index < 0) {
-            botao.classList.replace('btn-success', 'btn-primary');
-        }
-    }, 1500);
-}
-
-function mostrarRelatorio() {
-    if (produtosSelecionados.length === 0) {
-        mostrarFeedback("Nenhum produto foi adicionado ao levantamento ainda.", "erro");
-        return;
-    }
-    
-    const clienteSelecionado = elements.clienteSelect?.options[elements.clienteSelect.selectedIndex]?.text || 'Não selecionado';
-    elements.relatorioCliente.textContent = clienteSelecionado;
-    elements.relatorioData.textContent = new Date().toLocaleDateString();
-    
-    let html = '';
-    produtosSelecionados.forEach(produto => {
-        html += `
+    if (!todosProdutos || todosProdutos.length === 0) {
+        elementos.tabelaProdutos.innerHTML = `
             <tr>
-                <td>${produto.nome}</td>
-                <td class="text-end">${produto.estoque}</td>
-                <td class="text-end">${produto.sugestao}</td>
+                <td colspan="4" class="text-center text-muted py-4">
+                    <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
+                    Nenhum produto cadastrado para filtrar
+                </td>
             </tr>
         `;
-    });
-    elements.relatorioItens.innerHTML = html;
-    
-    elements.painelRelatorio.classList.remove('d-none');
-}
+        return;
+    }
 
-function compartilharWhatsApp() {
-    if (produtosSelecionados.length === 0) {
-        mostrarFeedback("Adicione produtos antes de compartilhar.", "erro");
+    const grupoSelecionado = elementos.filtroGrupo.value;
+    const termoBusca = elementos.filtroNome.value.toLowerCase();
+
+    if (!grupoSelecionado) {
+        elementos.tabelaProdutos.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-muted py-4">
+                    <i class="bi bi-funnel fs-4 d-block mb-2"></i>
+                    Selecione um grupo para visualizar os produtos
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const produtosFiltrados = todosProdutos.filter(produto => {
+        const grupoCorresponde = grupoSelecionado === "todos" || produto.grupo === grupoSelecionado;
+        const nomeCorresponde = !termoBusca || produto.nome.toLowerCase().includes(termoBusca);
+        return grupoCorresponde && nomeCorresponde;
+    });
+
+    if (produtosFiltrados.length === 0) {
+        elementos.tabelaProdutos.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-muted py-4">
+                    <i class="bi bi-search fs-4 d-block mb-2"></i>
+                    Nenhum produto encontrado com os filtros selecionados
+                </td>
+            </tr>
+        `;
         return;
     }
     
-    const cliente = elements.clienteSelect?.options[elements.clienteSelect.selectedIndex]?.text || 'Cliente não especificado';
+    elementos.tabelaProdutos.innerHTML = produtosFiltrados.map(produto => {
+        const produtoSalvo = produtosSalvos.find(p => p.id === produto.id);
+        const isSalvo = !!produtoSalvo;
+        
+        return `
+            <tr data-id="${produto.id}" ${isSalvo ? 'class="table-success"' : ''}>
+                <td>${produto.nome}</td>
+                <td>
+                    <input type="number" min="0" 
+                           value="${produtoSalvo?.estoque || produto.quantidade || 0}" 
+                           class="form-control form-control-sm estoque" 
+                           data-id="${produto.id}"
+                           ${isSalvo ? 'readonly' : ''}>
+                </td>
+                <td>
+                    <input type="number" min="0" 
+                           value="${produtoSalvo?.sugestao || 0}" 
+                           class="form-control form-control-sm sugestao" 
+                           data-id="${produto.id}"
+                           ${isSalvo ? 'readonly' : ''}>
+                </td>
+                <td>
+                    ${isSalvo ? `
+                        <span class="text-success">
+                            <i class="bi bi-check-circle-fill"></i> Salvo
+                        </span>
+                    ` : `
+                        <button class="btn btn-sm btn-success salvar-produto" data-id="${produto.id}">
+                            <i class="bi bi-check-lg"></i> Salvar
+                        </button>
+                    `}
+                </td>
+            </tr>
+        `;
+    }).join('');
     
-    let message = `*Levantamento de Estoque*\n\n`;
-    message += `*Cliente:* ${cliente}\n`;
-    message += `*Data:* ${new Date().toLocaleDateString()}\n\n`;
-    message += `*Itens:*\n`;
-    
-    produtosSelecionados.forEach(produto => {
-        message += `- ${produto.nome}\n  Estoque: ${produto.estoque} | Sugestão: ${produto.sugestao}\n`;
+    document.querySelectorAll('.estoque, .sugestao').forEach(input => {
+        if (!input.readOnly) {
+            input.addEventListener('change', atualizarProdutoTemporario);
+        }
     });
-    
-    message += `\nTotal de itens: ${produtosSelecionados.length}`;
-    
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+
+    document.querySelectorAll('.salvar-produto').forEach(btn => {
+        btn.addEventListener('click', salvarProduto);
+    });
 }
 
-function limparLevantamento() {
-    if (produtosSelecionados.length === 0) return;
-    
-    if (confirm('Tem certeza que deseja limpar todo o levantamento atual?')) {
-        produtosSelecionados = [];
-        document.querySelectorAll('.estoque, .sugestao').forEach(input => {
-            input.value = '0';
-        });
-        elements.painelRelatorio.classList.add('d-none');
-        mostrarFeedback("Levantamento limpo com sucesso!");
+function atualizarProdutoTemporario(e) {
+    const produtoId = e.target.dataset.id;
+    const row = e.target.closest('tr');
+    const estoque = parseFloat(row.querySelector('.estoque').value) || 0;
+    const sugestao = parseFloat(row.querySelector('.sugestao').value) || 0;
+
+    // Atualiza visualmente (mas não salva ainda)
+    if (estoque > 0 || sugestao > 0) {
+        row.classList.add('table-warning');
+    } else {
+        row.classList.remove('table-warning');
     }
 }
 
-function imprimirRelatorio() {
-    window.print();
+function salvarProduto(e) {
+    const produtoId = e.target.dataset.id;
+    const row = e.target.closest('tr');
+    const produto = todosProdutos.find(p => p.id === produtoId);
+    
+    if (!produto) return;
+
+    const estoque = parseFloat(row.querySelector('.estoque').value) || 0;
+    const sugestao = parseFloat(row.querySelector('.sugestao').value) || 0;
+
+    const index = produtosSalvos.findIndex(p => p.id === produtoId);
+    
+    if (index >= 0) {
+        produtosSalvos[index] = { ...produto, estoque, sugestao };
+    } else {
+        produtosSalvos.push({ ...produto, estoque, sugestao });
+    }
+
+    // Atualiza a linha
+    row.classList.remove('table-warning');
+    row.classList.add('table-success');
+    row.querySelector('.estoque').readOnly = true;
+    row.querySelector('.sugestao').readOnly = true;
+    row.querySelector('td:last-child').innerHTML = `
+        <span class="text-success">
+            <i class="bi bi-check-circle-fill"></i> Salvo
+        </span>
+    `;
+
+    // Feedback
+    mostrarFeedback("Produto salvo com sucesso!", "success");
+    atualizarContador();
 }
 
-async function finalizarLevantamento() {
-    const userId = localStorage.getItem('userId');
-    const clienteId = elements.clienteSelect?.value;
+function mostrarRevisao() {
+    const tbody = document.querySelector('#tabelaRevisao tbody');
+    const produtosComSugestao = produtosSalvos.filter(p => p.sugestao > 0);
+    
+    if (produtosComSugestao.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-muted py-4">
+                    <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
+                    Nenhum produto com sugestão de pedido
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = produtosComSugestao.map(produto => `
+        <tr data-id="${produto.id}">
+            <td>${produto.nome}</td>
+            <td>${produto.estoque}</td>
+            <td>${produto.sugestao}</td>
+            <td>
+                <button class="btn btn-sm btn-danger remover-item">
+                    <i class="bi bi-trash"></i> Remover
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    // Eventos para remoção
+    document.querySelectorAll('.remover-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const produtoId = e.target.closest('tr').dataset.id;
+            produtosSalvos = produtosSalvos.filter(p => p.id !== produtoId);
+            e.target.closest('tr').remove();
+            atualizarContador();
+            filtrarProdutos(); // Atualiza a tabela principal
+        });
+    });
+    
+    elementos.modalRevisao.show();
+}
+
+function enviarWhatsApp() {
+    const produtosComSugestao = produtosSalvos.filter(p => p.sugestao > 0);
+    
+    if (produtosComSugestao.length === 0) {
+        mostrarFeedback("Nenhum produto com sugestão de pedido", "warning");
+        return;
+    }
+    
+    const clienteNome = clienteSelecionado.nome;
+    const data = new Date().toLocaleDateString('pt-BR');
+    
+    // Formata a mensagem
+    let mensagem = `*Levantamento de Estoque - ${clienteNome}*\n`;
+    mensagem += `Data: ${data}\n\n`;
+    mensagem += '*Sugestão de Pedido:*\n\n';
+    
+    produtosComSugestao.forEach((produto, index) => {
+        mensagem += `➤ ${produto.nome}\n`;
+        mensagem += `   Estoque Atual: ${produto.estoque} un.\n`;
+        mensagem += `   Sugestão: ${produto.sugestao} un.\n\n`;
+    });
+    
+    mensagem += `*Total de itens sugeridos:* ${produtosComSugestao.length}`;
+    
+    window.open(`https://wa.me/?text=${encodeURIComponent(mensagem)}`, '_blank');
+}
+
+async function iniciarLevantamento() {
+    const clienteId = elementos.selectCliente.value;
+    const clienteNome = elementos.selectCliente.options[elementos.selectCliente.selectedIndex].text;
     
     if (!clienteId) {
-        mostrarFeedback("Selecione um cliente antes de finalizar.", "erro");
-        return;
-    }
-    
-    if (produtosSelecionados.length === 0) {
-        mostrarFeedback("Adicione produtos antes de finalizar.", "erro");
+        mostrarFeedback("Selecione um cliente antes de continuar", "warning");
         return;
     }
     
     try {
-        elements.btnFinalizarLevantamento.disabled = true;
-        elements.btnFinalizarLevantamento.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Salvando...';
+        elementos.btnIniciarLevantamento.disabled = true;
+        elementos.btnIniciarLevantamento.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Carregando...`;
+        
+        clienteSelecionado = { id: clienteId, nome: clienteNome };
+        produtosSalvos = [];
+        
+        await carregarProdutos();
+        
+        elementos.selectCliente.disabled = true;
+        elementos.etapaCliente.classList.add('d-none');
+        elementos.etapaProdutos.classList.remove('d-none');
+        elementos.contadorProdutos.classList.add('d-none');
+        
+        mostrarFeedback(`Levantamento iniciado para ${clienteNome}`, "success");
+    } catch (error) {
+        console.error("Erro ao iniciar levantamento:", error);
+        mostrarFeedback("Erro ao iniciar levantamento", "danger");
+    } finally {
+        elementos.btnIniciarLevantamento.disabled = false;
+        elementos.btnIniciarLevantamento.innerHTML = `<i class="bi bi-check-circle me-1"></i> Iniciar Levantamento`;
+    }
+}
+
+async function finalizarLevantamento() {
+    if (produtosSalvos.length === 0) {
+        mostrarFeedback("Salve pelo menos um produto antes de finalizar", "warning");
+        return;
+    }
+    
+    mostrarRevisao();
+}
+
+async function salvarLevantamento() {
+    try {
+        elementos.btnSalvarLevantamento.disabled = true;
+        elementos.btnSalvarLevantamento.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Salvando...`;
         
         await db.collection('vendedores')
-            .doc(userId)
+            .doc(auth.currentUser.uid)
             .collection('levantamentos')
             .add({
-                clienteId,
-                clienteNome: elements.clienteSelect.options[elements.clienteSelect.selectedIndex].text,
-                produtos: produtosSelecionados,
+                clienteId: clienteSelecionado.id,
+                clienteNome: clienteSelecionado.nome,
+                produtos: produtosSalvos.filter(p => p.sugestao > 0),
                 data: firebase.firestore.FieldValue.serverTimestamp(),
                 status: 'finalizado'
             });
         
-        mostrarFeedback("Levantamento finalizado e salvo com sucesso!");
-        limparLevantamento();
-        await carregarHistorico(userId);
+        mostrarFeedback("Levantamento salvo com sucesso!", "success");
+        resetarFormulario();
     } catch (error) {
         console.error("Erro ao salvar levantamento:", error);
-        mostrarFeedback("Erro ao salvar levantamento. Tente novamente.", "erro");
+        mostrarFeedback("Erro ao salvar levantamento", "danger");
     } finally {
-        elements.btnFinalizarLevantamento.disabled = false;
-        elements.btnFinalizarLevantamento.innerHTML = '<i class="bi bi-check-circle me-1"></i> Finalizar Levantamento';
+        elementos.btnSalvarLevantamento.disabled = false;
+        elementos.btnSalvarLevantamento.innerHTML = `<i class="bi bi-save me-1"></i> Salvar Levantamento`;
     }
+}
+
+function resetarFormulario() {
+    produtosSalvos = [];
+    elementos.selectCliente.disabled = false;
+    elementos.selectCliente.value = '';
+    elementos.filtroGrupo.value = '';
+    elementos.filtroNome.value = '';
+    elementos.etapaProdutos.classList.add('d-none');
+    elementos.etapaCliente.classList.remove('d-none');
+    elementos.contadorProdutos.classList.add('d-none');
+    
+    elementos.tabelaProdutos.innerHTML = `
+        <tr>
+            <td colspan="4" class="text-center text-muted py-4">
+                <i class="bi bi-funnel fs-4 d-block mb-2"></i>
+                Selecione um grupo para visualizar os produtos
+            </td>
+        </tr>
+    `;
+    
+    elementos.modalRevisao.hide();
+}
+
+function configurarEventos() {
+    elementos.btnIniciarLevantamento.addEventListener('click', iniciarLevantamento);
+    elementos.btnFinalizarLevantamento.addEventListener('click', finalizarLevantamento);
+    elementos.filtroGrupo.addEventListener('change', filtrarProdutos);
+    elementos.filtroNome.addEventListener('input', filtrarProdutos);
+    elementos.btnEnviarWhatsApp.addEventListener('click', enviarWhatsApp);
+    elementos.btnSalvarLevantamento.addEventListener('click', salvarLevantamento);
 }

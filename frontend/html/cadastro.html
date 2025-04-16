@@ -5,85 +5,93 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de Produtos</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css">
     <link rel="manifest" href="/js/manifest.json">
+    <link rel="stylesheet" href="/css/index.css">
 </head>
 <body>
     <div id="header-container"></div>
 
-    <div class="container mt-4">
+    <div class="container py-3">
         <!-- Card do Formulário de Cadastro -->
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i>Cadastrar Novo Produto</h5>
+        <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-primary text-white d-flex align-items-center py-2">
+                <i class="bi bi-box-seam me-2"></i>
+                <h5 class="mb-0 fs-6">Cadastrar Produto</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-3">
                 <form id="formCadastro">
-                    <div class="row g-3">
+                    <div class="row g-2">
                         <div class="col-md-6">
-                            <label for="nomeProduto" class="form-label">Nome do Produto*</label>
-                            <input type="text" class="form-control" id="nomeProduto" required>
+                            <label for="nomeProduto" class="form-label fw-medium">Nome*</label>
+                            <input type="text" class="form-control form-control-sm" id="nomeProduto" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="grupoProduto" class="form-label">Grupo*</label>
-                            <div class="input-group">
+                            <label for="grupoProduto" class="form-label fw-medium">Grupo*</label>
+                            <div class="input-group input-group-sm">
                                 <select class="form-select" id="grupoProduto" required>
-                                    <option value="">Selecione um grupo</option>
+                                    <option value="" selected disabled>Selecione</option>
                                 </select>
-                                <button class="btn btn-outline-secondary" type="button" id="btnAdicionarGrupo" title="Adicionar novo grupo">
+                                <button class="btn btn-outline-primary" type="button" id="btnAdicionarGrupo">
                                     <i class="bi bi-plus-lg"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Campo para novo grupo (oculto inicialmente) -->
+                    <!-- Campo para novo grupo -->
                     <div class="row mt-2" id="campoNovoGrupo" style="display: none;">
                         <div class="col-md-6 offset-md-6">
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="novoGrupo" placeholder="Nome do novo grupo">
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="novoGrupo" placeholder="Novo grupo">
                                 <button class="btn btn-success" type="button" id="btnSalvarGrupo">
-                                    <i class="bi bi-check-lg"></i> Salvar
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" type="button" id="btnCancelarNovoGrupo">
+                                    <i class="bi bi-x-lg"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="button" class="btn btn-outline-secondary me-2" id="btnCancelarEdicao" style="display: none;">
-                            <i class="bi bi-x-lg"></i> Cancelar
+                    <div class="d-flex justify-content-between mt-3 pt-2 border-top">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btnToggleLista">
+                            <i class="bi bi-list-check me-1"></i> Ver Produtos
                         </button>
-                        <button type="submit" class="btn btn-primary" id="btnSubmitForm">
-                            <i class="bi bi-save"></i> Salvar Produto
-                        </button>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-danger me-2" id="btnCancelarEdicao" style="display: none;">
+                                <i class="bi bi-x-lg"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-sm btn-primary" id="btnSubmitForm">
+                                <i class="bi bi-save"></i> Salvar
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Card de Busca e Filtros -->
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-light">
-                <h5 class="mb-0"><i class="bi bi-search me-2"></i>Buscar Produtos</h5>
+        <!-- Card de Busca (oculto inicialmente) -->
+        <div class="card mb-3 shadow-sm" id="cardBusca" style="display: none;">
+            <div class="card-header bg-white d-flex align-items-center py-2">
+                <i class="bi bi-funnel me-2"></i>
+                <h5 class="mb-0 fs-6">Filtrar Produtos</h5>
             </div>
-            <div class="card-body">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-8">
-                        <label for="searchProdutos" class="form-label">Pesquisar por nome</label>
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="searchProdutos" placeholder="Digite parte do nome">
-                            <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        </div>
+            <div class="card-body p-3">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-7">
+                        <input type="text" class="form-control form-control-sm" id="searchProdutos" placeholder="Nome do produto">
                     </div>
                     <div class="col-md-3">
-                        <label for="grupoProdutoFilter" class="form-label">Filtrar por grupo</label>
-                        <select class="form-select" id="grupoProdutoFilter">
+                        <select class="form-select form-select-sm" id="grupoProdutoFilter">
                             <option value="">Todos os grupos</option>
                         </select>
                     </div>
-                    <div class="col-md-1">
-                        <button class="btn btn-outline-secondary w-100" id="btnLimparFiltros" title="Limpar filtros">
+                    <div class="col-md-2 text-end">
+                        <button class="btn btn-sm btn-outline-primary me-1" id="btnListarTodos">
+                            <i class="bi bi-list-ul"></i> Todos
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" id="btnLimparFiltros" title="Limpar filtros">
                             <i class="bi bi-arrow-counterclockwise"></i>
                         </button>
                     </div>
@@ -91,30 +99,30 @@
             </div>
         </div>
 
-        <!-- Card da Lista de Produtos -->
-        <div class="card shadow-sm">
-            <div class="card-header bg-light">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-list-check me-2"></i>Produtos Cadastrados</h5>
-                    <span class="badge bg-primary rounded-pill" id="contadorProdutos">0</span>
+        <!-- Card da Lista de Produtos (oculto inicialmente) -->
+        <div class="card shadow-sm" id="cardLista" style="display: none;">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-list-check me-2"></i>
+                    <h5 class="mb-0 fs-6">Produtos</h5>
                 </div>
+                <span class="badge bg-primary rounded-pill" id="contadorProdutos">0</span>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
                             <tr>
-                                <th width="50%">Nome do Produto</th>
-                                <th width="30%">Grupo</th>
-                                <th width="20%" class="text-end">Ações</th>
+                                <th>Nome</th>
+                                <th>Grupo</th>
+                                <th class="text-end">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaProdutos">
-                            <!-- Resultados serão carregados aqui -->
                             <tr>
-                                <td colspan="3" class="text-center text-muted py-4">
-                                    <i class="bi bi-info-circle fs-4 d-block mb-2"></i>
-                                    Use os filtros acima para buscar produtos
+                                <td colspan="3" class="text-center text-muted py-3">
+                                    <i class="bi bi-box-seam fs-5 d-block mb-1"></i>
+                                    Nenhum produto cadastrado
                                 </td>
                             </tr>
                         </tbody>
@@ -132,7 +140,32 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="module" src="/js/cadastro.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/cadastro.js"></script>
+
+    <!-- Controle do botão Ver Produtos -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const btnToggleLista = document.getElementById('btnToggleLista');
+            const cardBusca = document.getElementById('cardBusca');
+            const cardLista = document.getElementById('cardLista');
+            
+            if (btnToggleLista && cardBusca && cardLista) {
+                btnToggleLista.addEventListener('click', function() {
+                    const mostrar = cardLista.style.display === 'none';
+                    cardLista.style.display = mostrar ? 'block' : 'none';
+                    cardBusca.style.display = mostrar ? 'block' : 'none';
+                    
+                    this.innerHTML = mostrar 
+                        ? '<i class="bi bi-x-circle me-1"></i> Ocultar Produtos' 
+                        : '<i class="bi bi-list-check me-1"></i> Ver Produtos';
+                    
+                    if (mostrar && firebase.auth().currentUser) {
+                        carregarProdutos(firebase.auth().currentUser.uid);
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

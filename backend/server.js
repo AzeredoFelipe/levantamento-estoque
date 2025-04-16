@@ -1,79 +1,85 @@
 if (process.env.NODE_ENV !== 'production') {
-    require('dotenv').config();
+  require('dotenv').config();
 }
 
 const express = require('express');
 const path = require('path');
-const admin = require('firebase-admin'); // ÚNICA declaração
+const admin = require('firebase-admin');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuração unificada do Firebase
+// Configuração do Firebase Admin
 if (admin.apps.length === 0) {
   try {
-    const config = {
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-      }),
-      databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
-    };
+      const config = {
+          credential: admin.credential.cert({
+              projectId: process.env.FIREBASE_PROJECT_ID,
+              clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+              privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+          }),
+          databaseURL: `https://${process.env.FIREBASE_PROJECT_ID}.firebaseio.com`
+      };
 
-    // Configuração local apenas se não estiver em produção
-    if (process.env.NODE_ENV !== 'production' && require.resolve('./serviceAccountKey.json')) {
-      config.credential = admin.credential.cert(require('./serviceAccountKey.json'));
-    }
+      if (process.env.NODE_ENV !== 'production' && require.resolve('./serviceAccountKey.json')) {
+          config.credential = admin.credential.cert(require('./serviceAccountKey.json'));
+      }
 
-    admin.initializeApp(config);
-    console.log('Firebase Admin inicializado com sucesso');
+      admin.initializeApp(config);
+      console.log('Firebase Admin inicializado com sucesso');
   } catch (error) {
-    console.error('Erro ao inicializar Firebase:', error);
-    process.exit(1);
+      console.error('Erro ao inicializar Firebase:', error);
+      process.exit(1);
   }
 }
 
 // Middlewares
+app.use(cors());
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use(express.json());
 
 // Middleware de autenticação
 const autenticarUsuario = async (req, res, next) => {
-  const idToken = req.headers.authorization;
-  if (!idToken) return res.status(401).send("Não autorizado");
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: "Token não fornecido ou formato inválido" });
+  }
 
+  const idToken = authHeader.split('Bearer ')[1];
+  
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.userId = decodedToken.uid;
-    next();
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      req.userId = decodedToken.uid;
+      next();
   } catch (error) {
-    console.error("Erro na autenticação:", error);
-    res.status(401).send("Token inválido");
+      console.error("Erro na autenticação:", error);
+      res.status(401).json({ 
+          error: "Não autorizado",
+          details: error.message 
+      });
   }
 };
 
-// Rota de teste do Firebase
+// Rota de teste
 app.get('/test-firebase', async (req, res) => {
-    try {
-      // Teste simples de autenticação
+  try {
       const userRecords = await admin.auth().listUsers(1);
-      
       res.json({
-        status: 'success',
-        firebase: 'working',
-        firstUser: userRecords.users[0]?.email || 'none'
+          status: 'success',
+          firebase: 'working',
+          firstUser: userRecords.users[0]?.email || 'none'
       });
-    } catch (error) {
+  } catch (error) {
       res.status(500).json({
-        status: 'error',
-        message: error.message,
-        details: error.stack
+          status: 'error',
+          message: error.message,
+          details: error.stack
       });
-    }
-  });
+  }
+});
 
-// Rotas
+// Rotas principais
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
@@ -82,17 +88,11 @@ app.get('/', (req, res) => {
 app.use('/api', autenticarUsuario, require('./routes/estoqueRoutes'));
 
 // Rotas HTML
-[
-  'levantamento',
-  'acompanhamento',
-  'cadastro',
-  'cadastroCliente',
-  'cadastroVendedor'
-].forEach(page => {
+['levantamento', 'acompanhamento', 'cadastro', 'cadastroCliente', 'cadastroVendedor'].forEach(page => {
   app.get(`/${page}`, (req, res) => {
-    res.sendFile(path.join(__dirname, `../frontend/html/${page}.html`), err => {
-      err && res.status(404).send('Página não encontrada');
-    });
+      res.sendFile(path.join(__dirname, `../frontend/html/${page}.html`), err => {
+          err && res.status(404).send('Página não encontrada');
+      });
   });
 });
 
@@ -104,7 +104,7 @@ app.get('*', (req, res) => {
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Erro:', err);
-  res.status(500).send('Erro interno');
+  res.status(500).json({ error: 'Erro interno no servidor' });
 });
 
 // Iniciar servidor

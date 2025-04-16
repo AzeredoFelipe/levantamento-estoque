@@ -148,6 +148,13 @@ function configurarEventos() {
     configurarPesquisa();
 }
 
+// Função para listar todos os produtos
+function listarTodosProdutos(userId) {
+    document.getElementById('searchProdutos').value = '';
+    document.getElementById('grupoProdutoFilter').value = '';
+    carregarProdutos(userId);
+}
+
 // Funções para grupos
 async function carregarGruposParaSelect(userId) {
     const select = document.getElementById('grupoProduto');
@@ -331,45 +338,38 @@ function configurarPesquisa() {
     const searchInput = document.getElementById('searchProdutos');
     const grupoFilter = document.getElementById('grupoProdutoFilter');
     const btnLimpar = document.getElementById('btnLimparFiltros');
+    const btnListarTodos = document.getElementById('btnListarTodos');
+    const user = auth.currentUser;
 
+    if (!user) return;
+
+    // Configurar evento do botão Listar Todos
+    btnListarTodos.addEventListener('click', () => {
+        listarTodosProdutos(user.uid);
+    });
+
+    // Configurar evento de busca
     let timeout;
-    const executarBusca = () => {
-        const user = auth.currentUser;
-        if (!user) return;
-        
-        const texto = searchInput.value.trim().toLowerCase();
+    searchInput.addEventListener('input', () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            const texto = searchInput.value.trim().toLowerCase();
+            const grupo = grupoFilter.value;
+            carregarProdutos(user.uid, texto, grupo);
+        }, 400);
+    });
+
+    // Configurar evento do filtro de grupo
+    grupoFilter.addEventListener('change', () => {
         const grupo = grupoFilter.value;
-        
-        // Se ambos os filtros estiverem vazios, mostra estado inicial
-        if (!texto && !grupo) {
-            mostrarEstadoInicial();
-            return;
-        }
-        
+        const texto = searchInput.value.trim().toLowerCase();
         carregarProdutos(user.uid, texto, grupo);
-    };
+    });
 
-    // Debounce para a busca
-    if (searchInput) {
-        searchInput.addEventListener('input', () => {
-            clearTimeout(timeout);
-            timeout = setTimeout(executarBusca, 400);
-        });
-    }
-
-    // Filtro por grupo
-    if (grupoFilter) {
-        grupoFilter.addEventListener('change', executarBusca);
-    }
-
-    // Botão limpar filtros
-    if (btnLimpar) {
-        btnLimpar.addEventListener('click', () => {
-            searchInput.value = '';
-            grupoFilter.value = '';
-            mostrarEstadoInicial();
-        });
-    }
+    // Configurar botão limpar filtros
+    btnLimpar.addEventListener('click', () => {
+        listarTodosProdutos(user.uid);
+    });
 }
 
 // Carregar produtos com filtros
