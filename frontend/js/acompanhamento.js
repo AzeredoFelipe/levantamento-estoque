@@ -1,4 +1,3 @@
-// Configuração do Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
   authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
@@ -9,13 +8,10 @@ const firebaseConfig = {
   measurementId: "G-3ETPR2T1PM"
 };
 
-// Inicialização segura do Firebase
 if (typeof firebase !== 'undefined' && !firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 const auth = firebase.auth();
-
-// Sistema de feedback melhorado
 function mostrarFeedback(mensagem, tipo = "sucesso") {
   const feedbackElement = document.getElementById('feedback-mensagem') || document.getElementById('mensagem');
   if (feedbackElement) {
@@ -39,7 +35,6 @@ const FERIADOS = new Set([
   "2025-12-25", "2025-07-09", "2025-11-20"
 ]);
 
-// Elementos da interface
 const elements = {
   diasUteis: document.getElementById("diasUteis"),
   diasTrabalhados: document.getElementById("diasTrabalhados"),
@@ -50,15 +45,12 @@ const elements = {
   mix30: document.getElementById("mix30")
 };
 
-// Inicialização da aplicação
 document.addEventListener('DOMContentLoaded', () => {
-  // Verifica se o Firebase está carregado
   if (typeof firebase === 'undefined') {
       mostrarFeedback("Erro: Biblioteca Firebase não carregada", "erro");
       return;
   }
   
-  // Verifica autenticação
   auth.onAuthStateChanged((user) => {
       if (user) {
           carregarComponentes();
@@ -69,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Carregar componentes da página
 async function carregarComponentes() {
   try {
       await Promise.all([
@@ -81,8 +72,6 @@ async function carregarComponentes() {
       mostrarFeedback("Erro ao carregar componentes da página", "erro");
   }
 }
-
-// Função para carregar o cabeçalho
 async function carregarHeader() {
   try {
       const headerContainer = document.getElementById('header-container');
@@ -97,8 +86,6 @@ async function carregarHeader() {
       throw error;
   }
 }
-
-// Função para carregar o rodapé
 async function carregarFooter() {
   try {
       const footerContainer = document.getElementById('footer-container');
@@ -113,8 +100,6 @@ async function carregarFooter() {
       throw error;
   }
 }
-
-// Funções de cálculo
 function ehFeriado(data) {
   return FERIADOS.has(data.toISOString().split("T")[0]);
 }
@@ -191,8 +176,6 @@ function calcularMixFaltante() {
       console.error("Erro ao calcular mix faltante:", error);
   }
 }
-
-// Inicialização dos cálculos
 function inicializarCalculos() {
   try {
       calcularDiasUteis();

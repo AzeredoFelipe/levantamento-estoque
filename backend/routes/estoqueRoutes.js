@@ -3,7 +3,7 @@ const router = express.Router();
 const admin = require('firebase-admin');
 const { body, validationResult } = require('express-validator');
 
-// Helper para tratamento de erros
+
 const handleFirestoreError = (res, error) => {
     console.error('Firestore Error:', error);
     res.status(500).json({ 
@@ -12,7 +12,6 @@ const handleFirestoreError = (res, error) => {
     });
 };
 
-// Validações compartilhadas
 const itemValidations = [
     body('nome').notEmpty().trim().withMessage('Nome é obrigatório'),
     body('quantidade').isInt({ min: 0 }).withMessage('Quantidade inválida'),

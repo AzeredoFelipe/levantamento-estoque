@@ -1,4 +1,3 @@
-// Configuração do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
     authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
@@ -9,17 +8,14 @@ const firebaseConfig = {
     measurementId: "G-3ETPR2T1PM"
 };
 
-// Inicialização do Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Variáveis globais
 let produtoEmEdicao = null;
 
-// Listener de autenticação
 auth.onAuthStateChanged((user) => {
     if (user) {
         console.log("Usuário autenticado:", user.uid);
@@ -30,7 +26,6 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
-// Função principal de inicialização
 async function inicializarAplicacao(userId) {
     try {
         await carregarComponentes();
@@ -45,7 +40,6 @@ async function inicializarAplicacao(userId) {
     }
 }
 
-// Mostra o estado inicial da tabela
 function mostrarEstadoInicial() {
     const tabela = document.getElementById('tabelaProdutos');
     if (!tabela) return;
@@ -65,7 +59,6 @@ function mostrarEstadoInicial() {
     }
 }
 
-// Função para mostrar feedback
 function mostrarFeedback(mensagem, tipo = "success") {
     const feedbackElement = document.createElement('div');
     feedbackElement.className = `alert alert-${tipo} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
@@ -83,7 +76,6 @@ function mostrarFeedback(mensagem, tipo = "success") {
     }, 5000);
 }
 
-// Carregar componentes da página
 async function carregarComponentes() {
     try {
         await Promise.all([carregarHeader(), carregarFooter()]);
@@ -121,9 +113,7 @@ async function carregarFooter() {
     }
 }
 
-// Configuração de eventos
 function configurarEventos() {
-    // Formulário de cadastro
     const formCadastro = document.getElementById('formCadastro');
     if (formCadastro) {
         formCadastro.addEventListener('submit', (e) => {
@@ -135,27 +125,21 @@ function configurarEventos() {
         });
     }
 
-    // Botão adicionar grupo
     document.getElementById('btnAdicionarGrupo')?.addEventListener('click', toggleCampoNovoGrupo);
     
-    // Botão salvar grupo
     document.getElementById('btnSalvarGrupo')?.addEventListener('click', salvarNovoGrupo);
     
-    // Botão cancelar edição
     document.getElementById('btnCancelarEdicao')?.addEventListener('click', cancelarEdicao);
     
-    // Configurar pesquisa e filtros
     configurarPesquisa();
 }
 
-// Função para listar todos os produtos
 function listarTodosProdutos(userId) {
     document.getElementById('searchProdutos').value = '';
     document.getElementById('grupoProdutoFilter').value = '';
     carregarProdutos(userId);
 }
 
-// Funções para grupos
 async function carregarGruposParaSelect(userId) {
     const select = document.getElementById('grupoProduto');
     if (!select) return;
@@ -210,7 +194,6 @@ async function salvarNovoGrupo() {
     }
 
     try {
-        // Verifica se grupo já existe
         const snapshot = await db.collection('vendedores')
             .doc(user.uid)
             .collection('grupos')
@@ -222,7 +205,6 @@ async function salvarNovoGrupo() {
             return;
         }
 
-        // Adiciona novo grupo
         await db.collection('vendedores')
             .doc(user.uid)
             .collection('grupos')
@@ -244,13 +226,11 @@ async function salvarNovoGrupo() {
     }
 }
 
-// Funções para produtos
 async function cadastrarProduto(userId) {
     const btnSubmit = document.getElementById('btnSubmitForm');
     const originalText = btnSubmit.innerHTML;
     
     try {
-        // Mostrar loading
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Salvando...';
 
@@ -288,7 +268,6 @@ async function editarProduto(userId) {
     const originalText = btnSubmit.innerHTML;
     
     try {
-        // Mostrar loading
         btnSubmit.disabled = true;
         btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Atualizando...';
 
@@ -333,7 +312,6 @@ function validarDadosProduto(nome, grupo) {
     return true;
 }
 
-// Configuração da pesquisa
 function configurarPesquisa() {
     const searchInput = document.getElementById('searchProdutos');
     const grupoFilter = document.getElementById('grupoProdutoFilter');
@@ -343,12 +321,10 @@ function configurarPesquisa() {
 
     if (!user) return;
 
-    // Configurar evento do botão Listar Todos
     btnListarTodos.addEventListener('click', () => {
         listarTodosProdutos(user.uid);
     });
 
-    // Configurar evento de busca
     let timeout;
     searchInput.addEventListener('input', () => {
         clearTimeout(timeout);
@@ -359,20 +335,17 @@ function configurarPesquisa() {
         }, 400);
     });
 
-    // Configurar evento do filtro de grupo
     grupoFilter.addEventListener('change', () => {
         const grupo = grupoFilter.value;
         const texto = searchInput.value.trim().toLowerCase();
         carregarProdutos(user.uid, texto, grupo);
     });
 
-    // Configurar botão limpar filtros
     btnLimpar.addEventListener('click', () => {
         listarTodosProdutos(user.uid);
     });
 }
 
-// Carregar produtos com filtros
 async function carregarProdutos(userId, filtroTexto = '', grupoSelecionado = '') {
     const tabela = document.getElementById('tabelaProdutos');
     const contador = document.getElementById('contadorProdutos');
@@ -380,19 +353,15 @@ async function carregarProdutos(userId, filtroTexto = '', grupoSelecionado = '')
     if (!tabela) return;
 
     try {
-        // Mostrar estado de carregamento
         tabela.innerHTML = '<tr><td colspan="3" class="text-center py-4">Carregando...</td></tr>';
 
         let query = db.collection('vendedores')
                     .doc(userId)
                     .collection('produtos');
 
-        // Estratégia para evitar necessidade de índice composto:
-        // 1. Primeiro busca todos os produtos ordenados por nome
         const snapshot = await query.orderBy('nome').get();
         let produtos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        // 2. Aplica filtros localmente
         if (grupoSelecionado) {
             produtos = produtos.filter(p => p.grupo === grupoSelecionado);
         }
@@ -402,15 +371,12 @@ async function carregarProdutos(userId, filtroTexto = '', grupoSelecionado = '')
             produtos = produtos.filter(p => p.nome.toLowerCase().includes(termo));
         }
 
-        // Limitar a 100 resultados para performance
         produtos = produtos.slice(0, 100);
 
-        // Atualizar contador
         if (contador) {
             contador.textContent = produtos.length;
         }
 
-        // Tratar resultados vazios
         if (produtos.length === 0) {
             tabela.innerHTML = `
                 <tr>
@@ -423,7 +389,6 @@ async function carregarProdutos(userId, filtroTexto = '', grupoSelecionado = '')
             return;
         }
 
-        // Preencher tabela
         tabela.innerHTML = produtos.map(produto => `
             <tr>
                 <td>${produto.nome}</td>
@@ -455,7 +420,6 @@ async function carregarProdutos(userId, filtroTexto = '', grupoSelecionado = '')
             </tr>
         `;
         
-        // Mostra o link para criar o índice se for esse o erro
         if (error.code === 'failed-precondition') {
             mostrarFeedback(`
                 Erro de índice. 
@@ -467,9 +431,7 @@ async function carregarProdutos(userId, filtroTexto = '', grupoSelecionado = '')
     }
 }
 
-// Configurar eventos da tabela
 function configurarEventosTabela() {
-    // Botões editar
     document.querySelectorAll('.btn-editar').forEach(btn => {
         btn.addEventListener('click', () => {
             produtoEmEdicao = {
@@ -483,18 +445,15 @@ function configurarEventosTabela() {
             document.getElementById('btnCancelarEdicao').style.display = 'inline-block';
             document.getElementById('btnSubmitForm').innerHTML = '<i class="bi bi-save"></i> Atualizar Produto';
             
-            // Scroll para o formulário
             document.getElementById('formCadastro').scrollIntoView({ behavior: 'smooth' });
         });
     });
 
-    // Botões excluir
     document.querySelectorAll('.btn-excluir').forEach(btn => {
         btn.addEventListener('click', () => excluirProduto(btn.dataset.id));
     });
 }
 
-// Excluir produto
 async function excluirProduto(produtoId) {
     if (!confirm("Tem certeza que deseja excluir este produto?")) return;
 
@@ -519,7 +478,6 @@ async function excluirProduto(produtoId) {
     }
 }
 
-// Funções auxiliares
 function toggleCampoNovoGrupo() {
     const campo = document.getElementById('campoNovoGrupo');
     if (!campo) return;

@@ -10,7 +10,6 @@ const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuração do Firebase Admin
 if (admin.apps.length === 0) {
   try {
       const config = {
@@ -34,12 +33,10 @@ if (admin.apps.length === 0) {
   }
 }
 
-// Middlewares
 app.use(cors());
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use(express.json());
 
-// Middleware de autenticação
 const autenticarUsuario = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -61,7 +58,6 @@ const autenticarUsuario = async (req, res, next) => {
   }
 };
 
-// Rota de teste
 app.get('/test-firebase', async (req, res) => {
   try {
       const userRecords = await admin.auth().listUsers(1);
@@ -79,15 +75,12 @@ app.get('/test-firebase', async (req, res) => {
   }
 });
 
-// Rotas principais
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// Rotas API
 app.use('/api', autenticarUsuario, require('./routes/estoqueRoutes'));
 
-// Rotas HTML
 ['levantamento', 'acompanhamento', 'cadastro', 'cadastroCliente', 'cadastroVendedor'].forEach(page => {
   app.get(`/${page}`, (req, res) => {
       res.sendFile(path.join(__dirname, `../frontend/html/${page}.html`), err => {
@@ -96,18 +89,15 @@ app.use('/api', autenticarUsuario, require('./routes/estoqueRoutes'));
   });
 });
 
-// Rota fallback
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// Error handler
 app.use((err, req, res, next) => {
   console.error('Erro:', err);
   res.status(500).json({ error: 'Erro interno no servidor' });
 });
 
-// Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });

@@ -1,4 +1,3 @@
-// Configuração do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
     authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
@@ -9,17 +8,14 @@ const firebaseConfig = {
     measurementId: "G-3ETPR2T1PM"
 };
 
-// Inicialização do Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Variáveis globais
 let clienteEmEdicao = null;
 
-// Listener de autenticação
 auth.onAuthStateChanged((user) => {
     if (user) {
         console.log("Usuário autenticado:", user.uid);
@@ -30,7 +26,6 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
-// Função principal de inicialização
 async function inicializarAplicacao(userId) {
     try {
         await carregarComponentes();
@@ -43,7 +38,6 @@ async function inicializarAplicacao(userId) {
     }
 }
 
-// Mostra o estado inicial da tabela
 function mostrarEstadoInicial() {
     const tabela = document.getElementById('tabelaClientes');
     if (!tabela) return;
@@ -63,7 +57,6 @@ function mostrarEstadoInicial() {
     }
 }
 
-// Função para mostrar feedback
 function mostrarFeedback(mensagem, tipo = "success") {
     const feedbackElement = document.createElement('div');
     feedbackElement.className = `alert alert-${tipo} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
@@ -81,7 +74,6 @@ function mostrarFeedback(mensagem, tipo = "success") {
     }, 5000);
 }
 
-// Carregar componentes da página
 async function carregarComponentes() {
     try {
         await Promise.all([carregarHeader(), carregarFooter()]);
@@ -119,9 +111,7 @@ async function carregarFooter() {
     }
 }
 
-// Configuração de eventos
 function configurarEventos() {
-    // Formulário de cadastro
     const formCadastro = document.getElementById('formCadastroCliente');
     if (formCadastro) {
         formCadastro.addEventListener('submit', (e) => {
@@ -133,12 +123,10 @@ function configurarEventos() {
         });
     }
 
-    // Máscara para telefone
     document.getElementById('telefoneCliente')?.addEventListener('input', function(e) {
         const value = this.value.replace(/\D/g, '');
         if (value.length > 11) return false;
         
-        // Formatação: (00) 00000-0000
         let formatted = value;
         if (value.length > 2) formatted = `(${value.substring(0,2)}) ${value.substring(2)}`;
         if (value.length > 7) formatted = `(${value.substring(0,2)}) ${value.substring(2,7)}-${value.substring(7,11)}`;
@@ -146,16 +134,13 @@ function configurarEventos() {
         this.value = formatted;
     });
 
-    // Botão cancelar edição
     document.getElementById('btnCancelarEdicao')?.addEventListener('click', cancelarEdicao);
 }
 
-// Função para listar todos os clientes
 function listarTodosClientes(userId) {
     carregarClientes(userId);
 }
 
-// Funções para clientes
 async function carregarClientes(userId) {
     const tabela = document.getElementById('tabelaClientes');
     const contador = document.getElementById('contadorClientes');
@@ -228,7 +213,6 @@ async function carregarClientes(userId) {
     }
 }
 
-// Formatador de telefone
 function formatarTelefone(telefone) {
     if (!telefone) return '';
     const nums = telefone.replace(/\D/g, '');
@@ -241,7 +225,6 @@ function formatarTelefone(telefone) {
     return telefone;
 }
 
-// Validação de cliente
 function validarCliente(nome, telefone) {
     const erros = [];
     if (!nome || nome.length < 3) erros.push("Nome precisa ter pelo menos 3 caracteres");
@@ -251,7 +234,6 @@ function validarCliente(nome, telefone) {
     return erros;
 }
 
-// Cadastrar novo cliente
 async function cadastrarCliente(userId) {
     const btnSubmit = document.getElementById('btnSubmitForm');
     const originalText = btnSubmit.innerHTML;
@@ -292,7 +274,6 @@ async function cadastrarCliente(userId) {
     }
 }
 
-// Editar cliente existente
 async function editarCliente(userId) {
     if (!clienteEmEdicao) return;
 
@@ -338,9 +319,7 @@ async function editarCliente(userId) {
     }
 }
 
-// Configurar eventos da tabela
 function configurarEventosTabela() {
-    // Botões editar
     document.querySelectorAll('.btn-editar').forEach(btn => {
         btn.addEventListener('click', () => {
             clienteEmEdicao = {
@@ -360,13 +339,11 @@ function configurarEventosTabela() {
         });
     });
 
-    // Botões excluir
     document.querySelectorAll('.btn-excluir').forEach(btn => {
         btn.addEventListener('click', () => excluirCliente(btn.dataset.id));
     });
 }
 
-// Excluir cliente
 async function excluirCliente(clienteId) {
     if (!confirm("Tem certeza que deseja excluir este cliente?")) return;
 
@@ -391,7 +368,6 @@ async function excluirCliente(clienteId) {
     }
 }
 
-// Cancelar edição
 function cancelarEdicao() {
     clienteEmEdicao = null;
     document.getElementById('formCadastroCliente').reset();

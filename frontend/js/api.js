@@ -1,5 +1,3 @@
-// frontend/js/api.js
-
 const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:3000/api' 
     : '/api';
@@ -32,7 +30,7 @@ async function fetchApi(endpoint, method = 'GET', data = null) {
         console.log(`Resposta para ${endpoint}:`, { 
             status: response.status,
             statusText: response.statusText 
-        }); // Debug
+        }); 
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
@@ -53,14 +51,12 @@ async function fetchApi(endpoint, method = 'GET', data = null) {
 }
 
 window.estoqueApi = {
-    // Clientes
     async listarClientes() {
         try {
             return await fetchApi('listar-clientes');
         } catch (error) {
             console.error('Erro ao listar clientes:', error);
             if (error.message.includes('404')) {
-                // Adicione este log para debug
                 console.log('URL tentada:', `${API_BASE_URL}/listar-clientes`);
                 return [];
             }
@@ -77,14 +73,11 @@ window.estoqueApi = {
         }
     },
 
-    // Produtos
     listarProdutos: () => fetchApi('listar-itens'),
     cadastrarProduto: (produto) => fetchApi('cadastrar-item', 'POST', produto),
 
-    // Levantamentos
     salvarLevantamento: (levantamento) => fetchApi('cadastrar-levantamento', 'POST', levantamento),
     listarHistorico: () => fetchApi('listar-levantamentos'),
     
-    // Grupos
     listarGrupos: () => fetchApi('listar-grupos')
 };

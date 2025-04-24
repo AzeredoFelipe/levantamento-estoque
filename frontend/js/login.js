@@ -1,4 +1,3 @@
-// Configuração do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
     authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
@@ -9,16 +8,13 @@ const firebaseConfig = {
     measurementId: "G-3ETPR2T1PM"
 };
 
-// Inicializa o Firebase
 const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Controle de estado
 let authStateListener = null;
 let explicitLogin = false;
 
-// Função para mostrar mensagens formatadas
 function showMessage(message, type = 'error') {
     const messageElement = document.getElementById('mensagem');
     if (messageElement) {
@@ -26,7 +22,6 @@ function showMessage(message, type = 'error') {
         messageElement.className = `alert alert-${type === 'error' ? 'danger' : 'success'}`;
         messageElement.style.display = 'block';
         
-        // Oculta mensagens de sucesso após 3 segundos
         if (type === 'success') {
             setTimeout(() => {
                 messageElement.style.display = 'none';
@@ -35,9 +30,7 @@ function showMessage(message, type = 'error') {
     }
 }
 
-// Configura o listener de autenticação
 function setupAuthListener() {
-    // Remove listener anterior se existir
     if (authStateListener) {
         authStateListener();
     }
@@ -45,12 +38,10 @@ function setupAuthListener() {
     authStateListener = auth.onAuthStateChanged((user) => {
         const currentPath = window.location.pathname;
         
-        // Não faz nada nas páginas de cadastro
         if (currentPath.includes('cadastroVendedor')) {
             return;
         }
         
-        // Atualiza visibilidade do botão de logout
         const logoutButton = document.getElementById('logoutButton');
         if (logoutButton) {
             logoutButton.style.display = user ? 'block' : 'none';
@@ -67,7 +58,6 @@ function setupAuthListener() {
     });
 }
 
-// Função de login
 function handleLogin(event) {
     event.preventDefault();
     explicitLogin = true;
@@ -75,13 +65,11 @@ function handleLogin(event) {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('senha').value.trim();
 
-    // Validação básica
     if (!email || !password) {
         showMessage("Por favor, preencha todos os campos.");
         return;
     }
 
-    // Mostra estado de carregamento
     const submitButton = event.target.querySelector('button[type="submit"]');
     const originalText = submitButton.textContent;
     submitButton.disabled = true;
@@ -89,11 +77,9 @@ function handleLogin(event) {
 
     auth.signInWithEmailAndPassword(email, password)
         .then((userCredential) => {
-            // Armazena apenas o necessário
             localStorage.setItem('userId', userCredential.user.uid);
             showMessage("Login realizado com sucesso!", "success");
             
-            // Redireciona após breve delay para visualização da mensagem
             setTimeout(() => {
                 window.location.href = "/html/levantamento.html";
             }, 1000);
@@ -103,7 +89,6 @@ function handleLogin(event) {
             submitButton.disabled = false;
             submitButton.textContent = originalText;
             
-            // Tratamento de erros específicos
             let errorMessage = "Erro no login";
             switch(error.code) {
                 case 'auth/invalid-email':
@@ -123,12 +108,10 @@ function handleLogin(event) {
         });
 }
 
-// Função de logout
 function handleLogout() {
     auth.signOut()
         .then(() => {
             localStorage.removeItem('userId');
-            // Usa sessionStorage para mensagem pós-logout
             sessionStorage.setItem('showLogoutMessage', 'true');
             window.location.href = "/";
         })
@@ -137,30 +120,25 @@ function handleLogout() {
         });
 }
 
-// Inicialização da página
 document.addEventListener('DOMContentLoaded', function() {
     setupAuthListener();
     
-    // Configura formulário de login
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', handleLogin);
     }
 
-    // Configura botão de logout
     const logoutButton = document.getElementById('logoutButton');
     if (logoutButton) {
         logoutButton.addEventListener('click', handleLogout);
     }
 
-    // Mostra mensagem de logout se necessário
     if (sessionStorage.getItem('showLogoutMessage') === 'true') {
         showMessage("Você foi desconectado com sucesso.", "success");
         sessionStorage.removeItem('showLogoutMessage');
     }
 });
 
-// Sincronização entre abas
 window.addEventListener('storage', (event) => {
     if (event.key === 'userId' && !event.newValue) {
         window.location.reload();
