@@ -1,0 +1,301 @@
+
+/* Estilos específicos para a página inicial */
+body.index-page {
+    margin: 0;
+    padding: 0;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #156FF5, #0C4AA6); /* Gradiente azul */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: #fff;
+}
+
+body.index-page .welcome-container {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1); /* Fundo semi-transparente */
+    padding: 40px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px); /* Efeito de desfoque */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); /* Sombra suave */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Borda sutil */
+    max-width: 600px;
+    width: 90%;
+}
+
+body.index-page .welcome-container h1 {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    font-weight: bold;
+    color: #fff;
+}
+
+body.index-page .welcome-container p {
+    font-size: 1.2rem;
+    margin-bottom: 30px;
+    color: #e0e0e0;
+}
+
+body.index-page .btn-entrar {
+    display: inline-block;
+    padding: 12px 30px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #156FF5;
+    background-color: #fff;
+    border: none;
+    border-radius: 50px; /* Bordas arredondadas */
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+body.index-page .btn-entrar:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-3px); /* Efeito de levantar ao passar o mouse */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+body.index-page .btn-entrar:active {
+    transform: translateY(0); /* Efeito de pressionar */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsividade para telas menores */
+@media (max-width: 768px) {
+    body.index-page .welcome-container {
+        padding: 20px;
+    }
+
+    body.index-page .welcome-container h1 {
+        font-size: 2rem;
+    }
+
+    body.index-page .welcome-container p {
+        font-size: 1rem;
+    }
+
+    body.index-page .btn-entrar {
+        padding: 10px 20px;
+        font-size: 1rem;
+    }
+}
+/* Fixando a navbar */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.navbar-nav .nav-link {
+    font-size: 18px; /* Aumenta o tamanho da fonte */
+    font-weight: bold; /* Deixa a letra mais grossa */
+    color: #ffffff !important; /* Deixa o texto branco para contraste */
+    text-transform: uppercase; /* Deixa as letras todas maiúsculas (opcional) */
+}
+
+/* Fixando o cabeçalho "Levantamento de Estoque" e botões */
+.sticky-header {
+    position: sticky;
+    top: 0px; /* Altura da navbar */
+    z-index: 1020;
+    background-color: white;
+    padding: 10px;
+}
+
+/* Cor de fundo mais escura e contorno mais forte no cabeçalho */
+.custom-table-header th {
+    background-color: #d3d3d3; /* Cinza escuro */
+    border: 2px solid #000;    /* Contorno preto forte */
+    color: #000;               /* Cor do texto */
+}
+
+.sharebButton {
+    position: sticky;
+    top: 56px; /* Altura da navbar */
+    z-index: 1020;
+    padding: 10px 0;
+}
+
+/* Fixando o cabeçalho da tabela */
+.thead th {
+    position: sticky;
+    top: 110px; /* Altura da navbar + altura do cabeçalho e botões */
+    z-index: 1020;
+    background-color: white;
+}
+
+
+
+/* Bordas pretas */
+.table-bordered td, .table-bordered th {
+    border: 1px solid #000;    /* Bordas pretas */
+}
+
+/* Botão compartilhar - padrão para desktop */
+#shareButton {
+    position: sticky;
+    top: 150px; /* Altura da navbar */
+    width: 80px; /* Largura do botão para formar um quadrado */
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+/* Imagem dentro do botão */
+#shareImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ajusta a imagem dentro do botão */
+}
+
+/* Ajuste para dispositivos móveis */
+@media (max-width: 768px) {  /* Exemplo: telas com largura até 768px */
+    #shareButton {
+        width: 50px;  /* Dimensões menores para celular */
+        height: 40px;
+    }
+}
+
+/* Container geral */
+.mix-medio-container {
+    max-width: 800px; /* Maior largura para acomodar duas colunas */
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Título */
+.mix-medio-container .title {
+    text-align: center;
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+/* Layout de duas colunas */
+.row {
+    display: flex;
+    justify-content: space-between; /* Espaçamento automático entre colunas */
+    gap: 10px; /* Espaço entre colunas */
+}
+
+.column {
+    flex: 1; /* Cada coluna ocupa o mesmo espaço */
+}
+
+/* Estilo dos rótulos e campos */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+}
+
+/* Botões de opção */
+.radio-buttons {
+    margin-top: 10px;
+}
+
+.radio-buttons div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.radio-buttons input[type="radio"] {
+    margin-right: 10px;
+    transform: scale(1.2); /* Deixa os botões maiores para visualização */
+}
+
+.radio-buttons label {
+    font-size: 16px;
+    color: #333;
+}
+
+/* Estilo para campos em foco */
+.form-control:focus {
+    border-color: #156FF5;
+    box-shadow: 0 0 5px rgba(21, 111, 245, 0.4);
+    outline: none;
+}
+
+/* Aplicando estilos para o formulário de cadastro */
+.mix-medio-container {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background-color: #f9f9f9;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.mix-medio-container h2 {
+    text-align: center;
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+/* Estilo do botão de cadastro */
+.btn-primary {
+    width: 100%;
+    padding: 12px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 768px) {
+    .mix-medio-container {
+        max-width: 100%;
+        padding: 15px;
+    }
+
+    .btn-primary {
+        font-size: 16px;
+    }
+}
+
+.sucesso {
+    color: green;
+}
+
+.erro {
+    color: red;
+}

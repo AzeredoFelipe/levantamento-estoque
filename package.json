@@ -1,0 +1,28 @@
+{
+  "name": "tcc-estoque-node",
+  "version": "1.0.0",
+  "description": "Aplicação para levantamento de estoque",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "concurrently \"vite\" \"nodemon backend/server.js\"",
+    "dev-backend": "nodemon backend/server.js",
+    "dev-frontend": "vite",
+    "build": "vite build && cp -r frontend/html backend/public/html",
+    "predeploy": "npm run build",
+    "serve": "node backend/server.js"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-validator": "^7.2.1",
+    "firebase": "^10.1.0",
+    "firebase-admin": "^11.11.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "vite": "^6.2.2"
+  }
+}
