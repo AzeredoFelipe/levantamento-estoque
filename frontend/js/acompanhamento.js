@@ -29,10 +29,21 @@ function mostrarFeedback(mensagem, tipo = "sucesso") {
 
 // Lista de feriados
 const FERIADOS = new Set([
-  "2024-12-25", "2024-12-31", "2025-01-01",
-  "2025-04-21", "2025-05-01", "2025-09-07",
-  "2025-10-12", "2025-11-02", "2025-11-15",
-  "2025-12-25", "2025-07-09", "2025-11-20"
+    // Feriados Nacionais
+    "2025-01-01",   // Ano Novo
+    "2025-03-04",   // Carnaval (terça-feira)
+    "2025-04-18",   // Sexta-feira Santa 
+    "2025-04-21",   // Tiradentes
+    "2025-05-01",   // Dia do Trabalho
+    "2025-06-19",   // Corpus Christi
+    "2025-07-09",   // Revolução Constitucionalista de 1932 (Feriado Estadual (SP))
+    "2025-09-07",   // Independência do Brasil
+    "2025-09-14",   // Aniversário de Presidente Prudente 
+    "2025-10-12",   // Nossa Senhora Aparecida
+    "2025-11-02",   // Finados
+    "2025-11-15",   // Proclamação da República
+    "2025-11-20",   // Consciência Negra
+    "2025-12-25",   // Natal
 ]);
 
 const elements = {
@@ -65,7 +76,6 @@ async function carregarComponentes() {
   try {
       await Promise.all([
           carregarHeader(),
-          carregarFooter()
       ]);
   } catch (error) {
       console.error("Erro ao carregar componentes:", error);
@@ -83,20 +93,6 @@ async function carregarHeader() {
       headerContainer.innerHTML = await response.text();
   } catch (error) {
       console.error("Erro no carregamento do cabeçalho:", error);
-      throw error;
-  }
-}
-async function carregarFooter() {
-  try {
-      const footerContainer = document.getElementById('footer-container');
-      if (!footerContainer) return;
-
-      const response = await fetch('../html/footer.html');
-      if (!response.ok) throw new Error('Erro ao carregar rodapé');
-      
-      footerContainer.innerHTML = await response.text();
-  } catch (error) {
-      console.error("Erro no carregamento do rodapé:", error);
       throw error;
   }
 }

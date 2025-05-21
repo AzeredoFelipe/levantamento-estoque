@@ -12,6 +12,11 @@ const app = firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .catch((error) => {
+        console.error("Erro ao configurar persistência:", error);
+    });
+
 let authStateListener = null;
 let explicitLogin = false;
 
@@ -47,13 +52,8 @@ function setupAuthListener() {
             logoutButton.style.display = user ? 'block' : 'none';
         }
         
-        // Redireciona apenas se:
-        // 1. O usuário fez login explicitamente E/OU
-        // 2. Está tentando acessar uma página protegida sem autenticação
-        if (user && (explicitLogin || !['/', '/index.html'].includes(currentPath))) {
+        if (user && !explicitLogin && !['/', '/index.html'].includes(currentPath)) {
             window.location.href = "/html/levantamento.html";
-        } else if (!user && !['/', '/index.html', '/html/cadastroVendedor.html'].includes(currentPath)) {
-            window.location.href = "/";
         }
     });
 }
@@ -73,45 +73,76 @@ function handleLogin(event) {
     const submitButton = event.target.querySelector('button[type="submit"]');
     const originalText = submitButton.textContent;
     submitButton.disabled = true;
-    submitButton.textContent = "Entrando...";
+    submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Entrando...';
 
-    auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            localStorage.setItem('userId', userCredential.user.uid);
-            showMessage("Login realizado com sucesso!", "success");
-            
-            setTimeout(() => {
-                window.location.href = "/html/levantamento.html";
-            }, 1000);
-        })
-        .catch((error) => {
-            explicitLogin = false;
-            submitButton.disabled = false;
-            submitButton.textContent = originalText;
-            
-            let errorMessage = "Erro no login";
-            switch(error.code) {
-                case 'auth/invalid-email':
-                    errorMessage = "E-mail inválido";
-                    break;
-                case 'auth/user-disabled':
-                    errorMessage = "Conta desativada";
-                    break;
-                case 'auth/user-not-found':
-                case 'auth/wrong-password':
-                    errorMessage = "E-mail ou senha incorretos";
-                    break;
-                default:
-                    errorMessage = error.message;
-            }
-            showMessage(errorMessage);
-        });
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject({ 
+            code: 'auth/timeout', 
+            message: "Tempo excedido. Verifique sua conexão." 
+        }), 15000);
+    });
+
+    Promise.race([
+        auth.signInWithEmailAndPassword(email, password),
+        timeoutPromise
+    ])
+    .then((userCredential) => {
+        localStorage.setItem('userId', userCredential.user.uid);
+        showMessage("Login realizado com sucesso!", "success");
+        
+        window.location.href = "/html/levantamento.html";
+        
+        db.collection('vendedores').doc(userCredential.user.uid).get()
+            .then((doc) => {
+                if (doc.exists) {
+                    localStorage.setItem('userData', JSON.stringify(doc.data()));
+                }
+            })
+            .catch((firestoreError) => {
+                console.error("Erro no Firestore (não crítico):", firestoreError);
+            });
+    })
+    .catch((error) => {
+        explicitLogin = false;
+        submitButton.disabled = false;
+        submitButton.textContent = originalText;
+        
+        let errorMessage = "Erro no login. Tente novamente.";
+        switch(error.code) {
+            case 'auth/invalid-email':
+                errorMessage = "Formato de e-mail inválido";
+                break;
+            case 'auth/user-disabled':
+                errorMessage = "Esta conta foi desativada";
+                break;
+            case 'auth/user-not-found':
+                errorMessage = "E-mail não cadastrado";
+                break;
+            case 'auth/wrong-password':
+                errorMessage = "Senha incorreta";
+                break;
+            case 'auth/too-many-requests':
+                errorMessage = "Muitas tentativas. Tente mais tarde.";
+                break;
+            case 'auth/timeout':
+                errorMessage = "Tempo excedido. Verifique sua conexão.";
+                break;
+            case 'auth/network-request-failed':
+                errorMessage = "Sem conexão com a internet";
+                break;
+            default:
+                console.error("Erro completo:", error);
+                errorMessage = "Erro ao fazer login. Tente novamente mais tarde.";
+        }
+        showMessage(errorMessage);
+    });
 }
 
 function handleLogout() {
     auth.signOut()
         .then(() => {
             localStorage.removeItem('userId');
+            localStorage.removeItem('userData');
             sessionStorage.setItem('showLogoutMessage', 'true');
             window.location.href = "/";
         })
@@ -121,6 +152,12 @@ function handleLogout() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    if (!firebase.apps.length) {
+        showMessage("Erro na inicialização do sistema. Recarregue a página.", "error");
+        console.error("Firebase não inicializado");
+        return;
+    }
+
     setupAuthListener();
     
     const loginForm = document.getElementById('loginForm');

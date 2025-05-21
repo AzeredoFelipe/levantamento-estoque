@@ -1,4 +1,3 @@
-// Configuração do Firebase (use a mesma do seu levantamento.js)
 const firebaseConfig = {
     apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
     authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
@@ -43,13 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function carregarComponentes() {
     try {
-        const [header, footer] = await Promise.all([
+        const [header] = await Promise.all([
             fetch('/html/header.html').then(r => r.text()),
-            fetch('/html/footer.html').then(r => r.text())
         ]);
         
         document.getElementById('header-container').innerHTML = header;
-        document.getElementById('footer-container').innerHTML = footer;
     } catch (error) {
         console.error("Erro ao carregar componentes:", error);
     }

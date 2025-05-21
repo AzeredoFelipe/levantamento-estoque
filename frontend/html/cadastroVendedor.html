@@ -4,34 +4,59 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cadastro de Vendedor</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
+    <link rel="manifest" href="/js/manifest.json">
     <link rel="stylesheet" href="/css/index.css">
 </head>
 <body>
     <div id="header-container"></div>
-    <div class="container">
-        <h2>Cadastro de Vendedor</h2>
-        <form id="cadastroForm">
-            <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" placeholder="Digite seu email" required>
+
+    <div class="container py-3">
+        <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-primary text-white d-flex align-items-center py-2">
+                <i class="bi bi-person-plus me-2"></i>
+                <h5 class="mb-0 fs-6">Cadastrar Vendedor</h5>
             </div>
-            <div class="mb-3">
-                <label for="senha" class="form-label">Senha</label>
-                <input type="password" class="form-control" id="senha" placeholder="Digite sua senha (mínimo 6 caracteres)" required>
+            <div class="card-body p-3">
+                <form id="cadastroForm">
+                    <div class="row g-2">
+                        <div class="col-md-12">
+                            <label for="email" class="form-label fw-medium">Email*</label>
+                            <input type="email" class="form-control form-control-sm" id="email" placeholder="Digite seu email" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="senha" class="form-label fw-medium">Senha*</label>
+                            <input type="password" class="form-control form-control-sm" id="senha" placeholder="Mínimo 6 caracteres" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="confirmarSenha" class="form-label fw-medium">Confirmar Senha*</label>
+                            <input type="password" class="form-control form-control-sm" id="confirmarSenha" placeholder="Confirme sua senha" required>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-3 pt-2 border-top">
+                    <a href="/index.html" class="btn btn-sm btn-outline-danger" id="btnSair">
+                        <i class="bi bi-box-arrow-left"></i> Sair
+                    </a>
+                        <button type="submit" class="btn btn-sm btn-primary" id="btnSubmitForm">
+                            <i class="bi bi-save"></i> Cadastrar
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div class="mb-3">
-                <label for="confirmarSenha" class="form-label">Confirmar Senha</label>
-                <input type="password" class="form-control" id="confirmarSenha" placeholder="Confirme sua senha" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Cadastrar</button>
-        </form>
-        <div id="feedback-mensagem" class="mt-3"></div>
+        </div>
+
+        <div id="feedback-mensagem" class="alert alert-dismissible fade show mt-3" style="display: none;">
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            <span id="feedback-text"></span>
+        </div>
     </div>
-    <div id="footer-container"></div>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/cadastroVendedor.js"></script>
 </body>
 </html>

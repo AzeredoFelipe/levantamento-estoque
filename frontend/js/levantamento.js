@@ -1,4 +1,3 @@
-// Configuração do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
     authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
@@ -9,20 +8,17 @@ const firebaseConfig = {
     measurementId: "G-3ETPR2T1PM"
 };
 
-// Inicialização do Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Estado global
 let clienteSelecionado = null;
 let produtosSalvos = [];
 let todosProdutos = [];
 let todosGrupos = [];
 
-// Elementos da interface
 const elementos = {
     selectCliente: document.getElementById('selectCliente'),
     filtroGrupo: document.getElementById('filtroGrupo'),
@@ -38,7 +34,6 @@ const elementos = {
     modalRevisao: new bootstrap.Modal(document.getElementById('modalRevisao'))
 };
 
-// Inicialização
 document.addEventListener('DOMContentLoaded', () => {
     auth.onAuthStateChanged(async (user) => {
         if (user) {
@@ -51,16 +46,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Funções auxiliares
 async function carregarComponentes() {
     try {
-        const [header, footer] = await Promise.all([
+        const [header] = await Promise.all([
             fetch('/html/header.html').then(r => r.text()),
-            fetch('/html/footer.html').then(r => r.text())
         ]);
         
         document.getElementById('header-container').innerHTML = header;
-        document.getElementById('footer-container').innerHTML = footer;
     } catch (error) {
         console.error("Erro ao carregar componentes:", error);
     }
@@ -85,7 +77,6 @@ function atualizarContador() {
     elementos.contadorProdutos.classList.toggle('d-none', count === 0);
 }
 
-// Funções de carregamento de dados
 async function carregarClientes() {
     try {
         elementos.selectCliente.innerHTML = '<option value="">Selecione um cliente</option>';
@@ -130,7 +121,6 @@ async function carregarGrupos() {
             elementos.filtroGrupo.appendChild(option);
         });
 
-        // Carrega produtos após carregar grupos
         await carregarProdutos();
     } catch (error) {
         console.error("Erro ao carregar grupos:", error);
@@ -414,7 +404,7 @@ async function iniciarLevantamento() {
         clienteSelecionado = { id: clienteId, nome: clienteNome };
         produtosSalvos = [];
         
-        await carregarGrupos(); // Já carrega produtos automaticamente
+        await carregarGrupos(); 
         
         elementos.selectCliente.disabled = true;
         elementos.etapaCliente.classList.add('d-none');

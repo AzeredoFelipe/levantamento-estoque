@@ -78,7 +78,7 @@ function mostrarFeedback(mensagem, tipo = "success") {
 
 async function carregarComponentes() {
     try {
-        await Promise.all([carregarHeader(), carregarFooter()]);
+        await Promise.all([carregarHeader()]);
     } catch (error) {
         console.error("Erro ao carregar componentes:", error);
         throw error;
@@ -95,20 +95,6 @@ async function carregarHeader() {
         headerContainer.innerHTML = await response.text();
     } catch (error) {
         console.error("Erro no cabeçalho:", error);
-        throw error;
-    }
-}
-
-async function carregarFooter() {
-    const footerContainer = document.getElementById('footer-container');
-    if (!footerContainer) return;
-
-    try {
-        const response = await fetch('/html/footer.html');
-        if (!response.ok) throw new Error('Erro ao carregar rodapé');
-        footerContainer.innerHTML = await response.text();
-    } catch (error) {
-        console.error("Erro no rodapé:", error);
         throw error;
     }
 }

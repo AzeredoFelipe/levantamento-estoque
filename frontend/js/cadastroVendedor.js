@@ -1,4 +1,3 @@
-// Configuração do Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyBeSJEQukdOUm9CpMfG1O3DDjUCOB1SN7I",
     authDomain: "levantamentoestoqueweb-d71cb.firebaseapp.com",
@@ -149,6 +148,13 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (!user && !isSignUpFlow) {
             // Redireciona para login se não estiver logado e não for fluxo de cadastro
             window.location.href = "/";
+        }
+    });
+    document.getElementById('btnSair').addEventListener('click', function(e) {
+        if(confirm('Deseja realmente sair do cadastro? Os dados não salvos serão perdidos.')) {
+            window.location.href = '/index.html';
+        } else {
+            e.preventDefault();
         }
     });
 
