@@ -269,4 +269,19 @@ body.index-page {
         width: 50px;
         height: 40px;
     }
+    /* Esconde a address bar em PWA */
+@media all and (display-mode: standalone) {
+    body {
+        overflow: hidden;
+        height: 100%;
+    }
+    
+    /* Remove espaçamento do iOS */
+    @supports (-webkit-touch-callout: none) {
+        body {
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    }
+}
 }
