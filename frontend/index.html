@@ -82,5 +82,33 @@
           }
       });
   </script>
+  <script>
+    // Registro do Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('SW registrado:', registration);
+            
+            // Força a atualização do PWA
+            registration.update();
+          })
+          .catch(err => console.error('Falha no SW:', err));
+      });
+    }
+    
+    // Detecta evento de instalação
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      const installBtn = document.createElement('button');
+      installBtn.textContent = '📲 Instalar App';
+      installBtn.className = 'btn btn-success mt-3';
+      installBtn.onclick = () => {
+        e.prompt();
+        installBtn.style.display = 'none';
+      };
+      document.querySelector('.welcome-container').appendChild(installBtn);
+    });
+    </script>
 </body>
 </html>
