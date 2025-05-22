@@ -283,5 +283,29 @@ body.index-page {
             padding-bottom: env(safe-area-inset-bottom);
         }
     }
+    /* ========== AJUSTES PWA ========== */
+/* NOVO: Adicione no FINAL do arquivo, fora de outras media queries */
+
+/* Esconde a address bar em PWA */
+@media all and (display-mode: standalone) {
+    body.index-page {
+        height: 100vh;
+        height: -webkit-fill-available;
+        padding: 0;
+        overflow: hidden;
+    }
+    
+    .welcome-container {
+        padding: 20px;
+    }
+}
+
+/* Ajustes específicos para iOS */
+@supports (-webkit-touch-callout: none) {
+    body.index-page {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
 }
 }
