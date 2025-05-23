@@ -1,4 +1,4 @@
-const CACHE_NAME = 'estoque-app-v4';
+const CACHE_NAME = 'vendasync-app-v1';
 const urlsToCache = [
   '/',
   '/index.html',

@@ -1,7 +1,7 @@
 {
-  "name": "Levantamento de Estoque",
-  "short_name": "EstoqueApp",
-  "start_url": "/index.html?source=pwa",
+  "name": "Vendasync - Sistema de Vendas",
+  "short_name": "Vendasync",
+  "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0d6efd",
