@@ -8,12 +8,7 @@
   "theme_color": "#0d6efd",
   "orientation": "portrait-primary",
   "icons": [
-    {
-      "src": "/imagens/logoMarcas144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
+
     {
       "src": "/imagens/logoMarcas192x192.png",
       "sizes": "192x192",
