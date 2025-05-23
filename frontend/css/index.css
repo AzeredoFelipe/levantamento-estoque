@@ -269,7 +269,9 @@ body.index-page {
         width: 50px;
         height: 40px;
     }
-    /* Esconde a address bar em PWA */
+}
+
+/* Esconde a address bar em PWA */
 @media all and (display-mode: standalone) {
     body {
         overflow: hidden;
@@ -283,7 +285,9 @@ body.index-page {
             padding-bottom: env(safe-area-inset-bottom);
         }
     }
-    /* ========== AJUSTES PWA ========== */
+}
+
+/* ========== AJUSTES PWA ========== */
 /* NOVO: Adicione no FINAL do arquivo, fora de outras media queries */
 
 /* Esconde a address bar em PWA */
@@ -307,5 +311,67 @@ body.index-page {
         padding-bottom: env(safe-area-inset-bottom);
     }
 }
+
+/* ========== AJUSTES ESPECÍFICOS PARA TELA INICIAL NO ANDROID ========== */
+body.index-page {
+    display: flex;
+    min-height: 100vh;
+    padding: 16px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
+
+body.index-page .welcome-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+body.index-page .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 24px;
+}
+
+body.index-page .form-control {
+    padding: 14px 16px;
+    font-size: 16px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+body.index-page .btn-primary {
+    margin-top: 8px;
+    padding: 14px;
+    font-weight: 600;
+}
+
+/* Ajustes para telas muito pequenas (Android mais antigos) */
+@media (max-width: 360px) {
+    body.index-page .welcome-container {
+        padding: 20px 16px;
+    }
+    
+    body.index-page .welcome-container h1 {
+        font-size: 1.8rem;
+    }
+    
+    body.index-page .form-control {
+        padding: 12px 14px;
+    }
+}
+
+/* Ajuste para PWA instalado */
+@media all and (display-mode: standalone) {
+    body.index-page {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
 }
