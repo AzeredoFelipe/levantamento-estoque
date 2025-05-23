@@ -1,11 +1,13 @@
 const CACHE_NAME = 'estoque-app-v4';
 const urlsToCache = [
-  './',
-  './index.html',
-  './css/index.css',
-  './js/login.js',
-  '/Imagens/logoMarcas192x192.png',
-  '/manifest.json'
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/css/index.css',
+  '/js/login.js',
+  '/imagens/logoMarcas144x144.png',
+  '/imagens/logoMarcas192x192.png',
+  '/imagens/logoMarcas512x512.png'
 ];
 
 self.addEventListener('install', (event) => {
