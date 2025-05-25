@@ -19,6 +19,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
 
 let authStateListener = null;
 let explicitLogin = false;
+let ignoreNextAuthStateChange = false;
 
 function showMessage(message, type = 'error') {
     const messageElement = document.getElementById('mensagem');
@@ -43,6 +44,11 @@ function setupAuthListener() {
     authStateListener = auth.onAuthStateChanged((user) => {
         const currentPath = window.location.pathname;
         
+        if (ignoreNextAuthStateChange) {
+            ignoreNextAuthStateChange = false;
+            return;
+        }
+        
         if (currentPath.includes('cadastroVendedor')) {
             return;
         }
@@ -58,9 +64,31 @@ function setupAuthListener() {
     });
 }
 
+function setupAutocompleteHandlers() {
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('senha');
+    
+    if (emailInput && passwordInput) {
+        emailInput.addEventListener('focus', () => {
+            ignoreNextAuthStateChange = true;
+        });
+        
+        passwordInput.addEventListener('focus', () => {
+            ignoreNextAuthStateChange = true;
+        });
+        
+        // Impede o autopreenchimento imediato
+        setTimeout(() => {
+            emailInput.value = '';
+            passwordInput.value = '';
+        }, 100);
+    }
+}
+
 function handleLogin(event) {
     event.preventDefault();
     explicitLogin = true;
+    ignoreNextAuthStateChange = false;
 
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('senha').value.trim();
@@ -159,6 +187,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     setupAuthListener();
+    setupAutocompleteHandlers();
     
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
@@ -174,6 +203,17 @@ document.addEventListener('DOMContentLoaded', function() {
         showMessage("Você foi desconectado com sucesso.", "success");
         sessionStorage.removeItem('showLogoutMessage');
     }
+
+    // Solução adicional para Chrome Android
+    setTimeout(() => {
+        const inputs = document.querySelectorAll('input[type="password"]');
+        inputs.forEach(input => {
+            input.type = 'text';
+            setTimeout(() => {
+                input.type = 'password';
+            }, 100);
+        });
+    }, 500);
 });
 
 window.addEventListener('storage', (event) => {
